@@ -61,11 +61,11 @@ def models(filenames,grid,case):
 #points at 0.1A intervals so the model can be convolved.
 
 #Low and high wavelengths need to be 18A more than desired range
-#Set lambda range from ~3650 to 6760
+#Set lambda range from ~3650 to 6770
 #The Balmer jump in the models makes the spline bulge to its left
 #So start to the right of it
 
-    intlambda = np.divide(range(31000),10.) + 3660.0
+    intlambda = np.divide(range(31100),10.) + 3660.0
 #print intlambda[1]
 
 #Interpolate the model spectrum at 0.1 A intervals. But interp1d does not have
@@ -76,16 +76,16 @@ def models(filenames,grid,case):
     
 
     if case == 0:
-        shortlambdas1 = lambdas1[600:4000]
-        shortinten1 = inten1[600:4000]
-        shortlambdas2 = lambdas2[600:4000]
-        shortinten2 = inten2[600:4000]
-        shortlambdas3 = lambdas3[600:4000]
-        shortinten3 = inten3[600:4000]
-        shortlambdas4 = lambdas4[600:4000]
-        shortinten4 = inten4[600:4000]
-        shortlambdas5 = lambdas5[600:4000] 
-        shortinten5 = inten5[600:4000]
+        shortlambdas1 = lambdas1[600:4300]
+        shortinten1 = inten1[600:4300]
+        shortlambdas2 = lambdas2[600:4300]
+        shortinten2 = inten2[600:4300]
+        shortlambdas3 = lambdas3[600:4300]
+        shortinten3 = inten3[600:4300]
+        shortlambdas4 = lambdas4[600:4300]
+        shortinten4 = inten4[600:4300]
+        shortlambdas5 = lambdas5[600:4300] 
+        shortinten5 = inten5[600:4300]
 
     if case == 1:
         shortlambdas1 = lambdas1

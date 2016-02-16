@@ -5,11 +5,11 @@ Created on Wed Jan 21 14:16:05 2015
 @author: joshfuchs
 
 To do:
-- Do we need to fit gamma to larger than the normalization range? Yes.
-- Make sure interpolated models go out through H-alpha
 - Save and plot chi-square surfaces so that we can fit them automatically.
 
 Done:
+- Make sure interpolated models go out through H-alpha
+- Do we need to fit gamma to larger than the normalization range? Yes.
 - need to fit models to region larger than the normalization
 - automatically generate pseudo-gauss estimates for observed spectrum
 """
@@ -113,8 +113,12 @@ bfithi = np.min(np.where(lambdas > 5040.))
 blow = np.min(np.where(lambdas > 4710.))
 bhi = np.min(np.where(lambdas > 5010.))
 
+gfitlow = np.min(np.where(lambdas > 4200.))
+gfithi = np.min(np.where(lambdas > 4510.))
 glow = np.min(np.where(lambdas > 4220.))
 ghi = np.min(np.where(lambdas > 4490.))
+
+
 #hlow = np.min(np.where(lambdas > 3860.)) #For H8
 hlow = np.min(np.where(lambdas > 3782.)) #Includes H10 
 hhi = np.min(np.where(lambdas > 4191.))
@@ -279,9 +283,9 @@ betafit = pseudogauss(blambdas,bparams.params)
 
 
 #Fit gamma
-glambdas = lambdas[glow:ghi+1]
-gsigmas = sigmaval[glow:ghi+1]
-gamval = dataval[glow:ghi+1]
+glambdas = lambdas[gfitlow:gfithi+1]
+gsigmas = sigmaval[gfitlow:gfithi+1]
+gamval = dataval[gfitlow:gfithi+1]
 gfa = {'x':glambdas, 'y':gamval, 'err':gsigmas}
 gparams = mpfit.mpfit(fitpseudogauss,gest,functkw=gfa,maxiter=5000,ftol=1e-16)
 
@@ -293,8 +297,10 @@ gamfit = pseudogauss(glambdas,gparams.params)
 #plt.plot(glambdas,gparams.params[0]*1. + gparams.params[1]*glambdas+gparams.params[2]*glambdas**2.)
 #plt.show()
 #sys.exit()
+
+
 #To fit line for continuum, fix parameter two to zero.
-parhigh = [{'fixed':0} for i in range(23)] #7 total parameters
+parhigh = [{'fixed':0} for i in range(23)] #23 total parameters
 #parhigh[2]['fixed'] = 1
 #parhigh[1]['fixed'] = 1
 #parhigh[0]['fixed'] = 1
@@ -383,13 +389,18 @@ blambdas = blambdasnew - (bcenter-4862.710)
 
 #Now do gamma
 #gnline is the normalized spectral line. Continuum set to one.
-gslope = (gamfit[-1] - gamfit[0] ) / (glambdas[-1] - glambdas[0])
-gli = gslope * (glambdas - glambdas[0]) + gamfit[0]
-gnline = dataval[glow:ghi+1] / gli
-gsigma = sigmaval[glow:ghi+1] / gli
+gnormlow = np.min(np.where(glambdas > 4220.))
+gnormhi = np.min(np.where(glambdas > 4490.))
+gslope = (gamfit[gnormhi] - gamfit[gnormlow] ) / (glambdas[gnormhi] - glambdas[gnormlow])
+glambdasnew = glambdas[gnormlow:gnormhi+1]
+gamvalnew = gamval[gnormlow:gnormhi+1]
+gsigmasnew = gsigmas[gnormlow:gnormhi+1]
+gli = gslope * (glambdasnew - glambdas[gnormlow]) + gamfit[gnormlow]
+gnline = gamvalnew / gli
+gsigma = gsigmasnew / gli
 
 #Set the center of the line to the wavelength in vacuum
-glambdas = glambdas - (gcenter-4341.692)
+glambdas = glambdasnew - (gcenter-4341.692)
 
 #plt.clf()
 #plt.plot(glambdas,gnline)
@@ -455,7 +466,7 @@ alllambda = np.concatenate((H10lambdas,H9lambdas,H8lambdas,elambdas,dlambdas,gla
 allnline = np.concatenate((H10nline,H9nline,H8nline,enline,dnline,gnline,bnline,anline))
 allsigma = np.concatenate((H10sigma,H9sigma,H8sigma,esigma,dsigma,gsigma,bsigma,asigma))
 #lambdaindex = [0,len(H10lambdas)-1.,len(H10lambdas),len(H10lambdas)+len(H9lambdas)-1.,len(H10lambdas)+len(H9lambdas),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)-1.,len(H10lambdas)+len(H9lambdas)+len(H8lambdas),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)-1.,len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)-1.,len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdas)-1.,len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdas),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdas)+len(blambdas)-1.,len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdas)+len(blambdas),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdas)+len(blambdas)+len(alambdas)-1.]
-lambdaindex = [afitlow,afithi,alow,ahi,bfitlow,bfithi,blow,bhi,glow,ghi,hlow,hhi,dlow,dhi,elow,ehi,H8low,H8hi,H9low,H9hi,H10low,H10hi]
+lambdaindex = [afitlow,afithi,alow,ahi,bfitlow,bfithi,blow,bhi,gfitlow,gfithi,glow,ghi,hlow,hhi,dlow,dhi,elow,ehi,H8low,H8hi,H9low,H9hi,H10low,H10hi]
 
 ######For Halpha through H8
 #alllambda = np.concatenate((H8lambdas,elambdas,dlambdas,glambdas,blambdas,alambdas))
@@ -504,6 +515,7 @@ case = 0 #We'll be interpolating Koester's raw models
 filenames = 'modelnames.txt'
 #np.savetxt('norm_WD0122.dat',np.transpose([blambdas,bnline]))
 ncflux,bestT,bestg = intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas)
+#bestT, bestg = 12500, 800
 #sys.exit()
 
 #######

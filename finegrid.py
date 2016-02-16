@@ -68,6 +68,7 @@ def makefinegrid(blambdas,bnline,bsigma,lambdaindex,bestT,bestg,lambdas):
         grid = gridt
         case = 1 # Use 0 for log(g) interp. and 1 for Teff interp. Just a binary switch.
         #models(filenames,grid,case)
+        print 'Made it back!'
 
 
     print 'Done with all the log(g)s.'

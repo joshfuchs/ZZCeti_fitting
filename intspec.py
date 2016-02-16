@@ -260,20 +260,22 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas):
         bfithi = lambdaindex[5]
         blow = lambdaindex[6]
         bhi = lambdaindex[7]
-        glow = lambdaindex[8]
-        ghi = lambdaindex[9]
-        hlow = lambdaindex[10]
-        hhi = lambdaindex[11]
-        dlow = lambdaindex[12]
-        dhi = lambdaindex[13]
-        elow = lambdaindex[14]
-        ehi = lambdaindex[15]
-        H8low = lambdaindex[16]
-        H8hi = lambdaindex[17]
-        H9low = lambdaindex[18]
-        H9hi = lambdaindex[19]
-        H10low = lambdaindex[20]
-        H10hi = lambdaindex[21]
+        gfitlow = lambdaindex[8]
+        gfithi = lambdaindex[9]
+        glow = lambdaindex[10]
+        ghi = lambdaindex[11]
+        hlow = lambdaindex[12]
+        hhi = lambdaindex[13]
+        dlow = lambdaindex[14]
+        dhi = lambdaindex[15]
+        elow = lambdaindex[16]
+        ehi = lambdaindex[17]
+        H8low = lambdaindex[18]
+        H8hi = lambdaindex[19]
+        H9low = lambdaindex[20]
+        H9hi = lambdaindex[21]
+        H10low = lambdaindex[22]
+        H10hi = lambdaindex[23]
 
         ####################
         #For alpha through H9
@@ -432,10 +434,10 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas):
         aparams = mpfit.mpfit(fitpseudogauss,aest,functkw=afa,maxiter=5000,ftol=1e-16,parinfo=paralpha) #might want to specify xtol=1e-14 or so too
         alphafit = pseudogauss(alambdas,aparams.params)
 
-        print aest
-        print filename
-        print aest[0] - aparams.params[0]
-        print aparams.status
+        #print aest
+        #print filename
+        #print aest[0] - aparams.params[0]
+        #print aparams.status
         #plt.clf()
         #plt.plot(alambdas,alphaval,'b')
         #plt.plot(alambdas,pseudogauss(alambdas,aparams.params),'g')
@@ -450,9 +452,9 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas):
         bfa = {'x':blambdas,'y':betaval,'err':bsigmas}
         bparams = mpfit.mpfit(fitpseudogauss,best,functkw=bfa,maxiter=5000,ftol=1e-16)
         betafit = pseudogauss(blambdas,bparams.params)
-        print filename
-        print best[0] - bparams.params[0]
-        print bparams.status
+        #print filename
+        #print best[0] - bparams.params[0]
+        #print bparams.status
         #plt.clf()
         #plt.plot(blambdas,betaval,'b')
         #plt.plot(blambdas,pseudogauss(blambdas,bparams.params),'g')
@@ -461,15 +463,15 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas):
 
 
         #Fit H gamma
-        glambdas = lambdarange[glow:ghi+1.]
-        gamval = cflux2[glow:ghi+1.]
+        glambdas = lambdarange[gfitlow:gfithi+1.]
+        gamval = cflux2[gfitlow:gfithi+1.]
         gsigmas = np.ones(len(gamval))
         gfa = {'x':glambdas,'y':gamval,'err':gsigmas}
         gparams = mpfit.mpfit(fitpseudogauss,gest,functkw=gfa,maxiter=5000,ftol=1e-16)
         gamfit = pseudogauss(glambdas,gparams.params)
-        print filename
-        print gest[0] - gparams.params[0]
-        print gparams.status
+        #print filename
+        #print gest[0] - gparams.params[0]
+        #print gparams.status
         #plt.clf()
         #plt.plot(glambdas,gamval,'b')
         #plt.plot(glambdas,pseudogauss(glambdas,gparams.params),'g')
@@ -483,7 +485,7 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas):
         hfa = {'x':hlambdas,'y':hval,'err':hsigmas}
         hparams = mpfit.mpfit(multifitpseudogauss,hest,functkw=hfa,maxiter=5000,ftol=1e-16)
         hfit = multipseudogauss(hlambdas,hparams.params)
-        print filename
+        #print filename
         #plt.clf()
         #plt.plot(hlambdas,hval,'b')
         #plt.plot(hlambdas,multipseudogauss(hlambdas,hparams.params),'g')
@@ -538,18 +540,22 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas):
         dslope = (hfit[dnormhi] - hfit[dnormlow]) / (hlambdas[dnormhi] - hlambdas[dnormlow])
         dnline = dslope * (hlambdas[dnormlow:dnormhi+1] - hlambdas[dnormlow]) + hfit[dnormlow]
         dnflux = cflux2[dlow:dhi+1] / dnline
-
-        #Then H gamma
-        #gslope = (cflux2[ghi] - cflux2[glow]) / (alllambda[ghi] - alllambda[glow])
-        #gnline = gslope * (alllambda[glow:ghi+1.] - alllambda[glow]) + cflux2[glow]
-        #gnflux = cflux2[glow:ghi+1.] / gnline
-        gslope = (gamfit[-1] - gamfit[0]) / (glambdas[-1] - glambdas[0])
-        gnline = gslope * (glambdas - glambdas[0]) + gamfit[0]
-        gnflux = cflux2[glow:ghi+1.] / gnline
+        
 
         #For H alpha and beta we fit to larger regions than we want to compare. So need to normalize
         #using our narrower region.
         
+        #Now H gamma
+        #gslope = (cflux2[ghi] - cflux2[glow]) / (alllambda[ghi] - alllambda[glow])
+        #gnline = gslope * (alllambda[glow:ghi+1.] - alllambda[glow]) + cflux2[glow]
+        #gnflux = cflux2[glow:ghi+1.] / gnline
+        gnormlow = np.min(np.where(glambdas > 4220.))
+        gnormhi = np.min(np.where(glambdas > 4490.))
+        gslope = (gamfit[gnormhi] - gamfit[gnormlow]) / (glambdas[gnormhi] - glambdas[gnormlow])
+        glambdasnew = glambdas[gnormlow:gnormhi+1]
+        gnline = gslope * (glambdasnew - glambdas[gnormlow]) + gamfit[gnormlow]
+        gnflux = cflux2[glow:ghi+1.] / gnline
+    
         #Now H beta
         #bslope = (cflux2[bhi] - cflux2[blow]) / (alllambda[bhi] - alllambda[blow])
         #bnline = bslope * (alllambda[blow:bhi+1.] - alllambda[blow]) + cflux2[blow]
@@ -573,7 +579,7 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas):
         anflux = cflux2[alow:ahi+1.] / anline
         
         #plt.clf()
-        #plt.plot(hlambdas[dlow:dhi+1],dnflux)
+        #plt.plot(glambdasnew,gnflux)
         #plt.show()
 
         #Concatenate into one normalized array. If you want to exclude some regions (e.g. H10) this is where you should do that.
