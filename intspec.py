@@ -12,6 +12,7 @@ from scipy.interpolate import interp1d
 from scipy.interpolate import InterpolatedUnivariateSpline
 import os
 import sys
+import datetime
 import mpfit
 #import pyfits as pf # Infierno doesn't support astropy for some reason so using pyfits
 
@@ -53,7 +54,7 @@ def multifitpseudogauss(p,fjac=None,x=None, y=None, err=None):
 #Case = 0 means using D. Koester's raw models
 #Case = 1 means using the interpolation of those models to a smaller grid.
 
-def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas):
+def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired):
 
     print 'Starting to run intspec.py'
     lambdarange = lambdas #This is the full wavelength range from blue and red setups.
@@ -589,10 +590,13 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas):
         #ncflux = np.concatenate((H9nflux,H8nflux,enflux,dnflux,gnflux,bnflux))
         #ncflux = np.concatenate((H9nflux,H8nflux,enflux,dnflux,gnflux,bnflux,anflux))
         ncflux = np.concatenate((H10nflux,H9nflux,H8nflux,enflux,dnflux,gnflux,bnflux,anflux))
-
+        
         #plt.clf()
         #plt.plot(alllambda,ncflux,'b^')
         #plt.show()
+
+        #newfilename = 'da_norm_' + str(logg) + '_' + str(teff) + '.txt'
+        #np.savetxt(newfilename,np.transpose([alllambda,ncflux]))
 
 #plot the results.
         #if dracula == 'da12550_7880.jf':
@@ -648,6 +652,7 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas):
     #if case == 1:
     #First subtract the best chi-squared from all chi-squared values
     deltachi = np.subtract(chis,bestchi)
+    np.savetxt('deltachi.txt',deltachi)
     plt.clf()
     v = np.array([1.0])
     plt.figure()
@@ -666,9 +671,23 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas):
     lowerg = np.amin(rangeg)
     upperterr = uppert - bestT
     lowerterr = bestT - lowert
+    Terr = (upperterr + lowerterr) / 2.
     uppergerr = upperg - (bestg/1000.)
     lowergerr = (bestg/1000.) - lowerg
+    gerr = (uppergerr + lowergerr) / 2.
     plt.show()
+
+    #Save information on best fitting model and the convolved model itself
+    if case == 1:
+        f = open('fitting_solutions.txt','a')
+        now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M")
+        bestmodelname = 'da' + str(bestT) + '_' + str(bestg) + '.jf'
+        info = zzcetiblue + ',' + zzcetired + ',' +  bestmodelname + ',' + bestT + ',' +  Terr + ',' + bestg + ',' + gerr + ',' + now
+        f.write(info + '\n')
+        f.close()
+        #Now save the best convolved model
+        newmodel = 'model_' + zzcetiblue[4:-22] + '.txt' #NEED TO CHECK THIS TO MAKE SURE IT WORKS GENERALLY
+        np.savetxt(newmodel,np.transpose([alllambda,bestmodel]))
 
 
     print ''

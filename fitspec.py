@@ -56,8 +56,11 @@ def multifitpseudogauss(p,fjac=None,x=None, y=None, err=None):
     return([status,(y-model)/err])
 
 #Now we need to read in actual spectrum. This is for Goodman spectra.
+zzcetiblue = 'wnb.WD0122p0030_930_blue_fluxGD50.fits'
+zzcetired = 'wnb.WD0122p0030_930_red_fluxGD50.fits'
+
 #Read in the blue spectrum
-datalistblue = pf.open('wnb.WD0122p0030_930_blue_fluxGD50.fits')
+datalistblue = pf.open(zzcetiblue)
 datavalblue = datalistblue[0].data[1,0,:] #Reads in the object spectrum, data[2,0,:] is sky
 sigmavalblue = datalistblue[0].data[3,0,:] #Sigma spectrum
 wav0blue = datalistblue[0].header['crval1']
@@ -70,7 +73,7 @@ for i in ivalblue:
     lambdasblue[i] = lambdasblue[i-1] + deltawavblue
 
 #Read in the red spectrum
-datalistred = pf.open('wnb.WD0122p0030_930_red_fluxGD50.fits')
+datalistred = pf.open(zzcetired)
 datavalred = datalistred[0].data[1,0,:] #Reads in the object spectrum, data[2,0,:] is sky
 sigmavalred = datalistred[0].data[3,0,:] #Sigma spectrum
 wav0red = datalistred[0].header['crval1']
@@ -499,28 +502,28 @@ lambdaindex = [afitlow,afithi,alow,ahi,bfitlow,bfithi,blow,bhi,gfitlow,gfithi,gl
 #print lambdaindex
 #sys.exit()
 
-#measuredcenter = np.array([acenter,bcenter,gcenter,dcenter,ecenter,H8center,H9center])
-#restwavelength = np.array([6562.79,4862.71,4341.69,4102.89,3971.19,3890.16,3836.48])
-#c = 2.99792e5
-#velocity = c * (measuredcenter-restwavelength)/restwavelength
+measuredcenter = np.array([acenter,bcenter,gcenter,dcenter,ecenter,H8center,H9center])
+restwavelength = np.array([6562.79,4862.71,4341.69,4102.89,3971.19,3890.16,3836.48])
+c = 2.99792e5
+velocity = c * (measuredcenter-restwavelength)/restwavelength
 
-#plt.clf()
-#plt.plot(restwavelength,velocity,'b^')
-#plt.show()
+plt.clf()
+plt.plot(restwavelength,velocity,'b^')
+plt.show()
 #alllambdas and allnline are used in intspec.py
 #Now call intspec.py to run the model program
 
 print "Starting intspec.py now "
 case = 0 #We'll be interpolating Koester's raw models
-filenames = 'modelnames.txt'
+filenames = 'shortlist.txt'
 #np.savetxt('norm_WD0122.dat',np.transpose([blambdas,bnline]))
-ncflux,bestT,bestg = intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas)
+ncflux,bestT,bestg = intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired)
 #bestT, bestg = 12500, 800
-#sys.exit()
+sys.exit()
 
 #######
 # Now we want to compute the finer grid
 # And then compute the Chi-square for
 # Each of those
 #######
-makefinegrid(alllambda,allnline,allsigma,lambdaindex,bestT,bestg,lambdas)
+makefinegrid(alllambda,allnline,allsigma,lambdaindex,bestT,bestg,lambdas,zzcetiblue,zzcetired)

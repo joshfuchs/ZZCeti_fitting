@@ -15,7 +15,7 @@ from intmodels import models #This interpolates the models to a small grid
 from intspec import intmodel #This compares models to the spectrum
 
 
-def makefinegrid(blambdas,bnline,bsigma,lambdaindex,bestT,bestg,lambdas):
+def makefinegrid(blambdas,bnline,bsigma,lambdaindex,bestT,bestg,lambdas,zzcetiblue,zzcetired):
     firstt = bestT#12500
     firstg = bestg#800
 
@@ -78,4 +78,4 @@ def makefinegrid(blambdas,bnline,bsigma,lambdaindex,bestT,bestg,lambdas):
     case = 1 #We'll be comparing our new grid to the spectrum.
     filenames = 'interpolated_names.txt'
 
-    ncflux,bestT,bestg = intmodel(blambdas,bnline,bsigma,lambdaindex,case,filenames,lambdas)
+    ncflux,bestT,bestg = intmodel(blambdas,bnline,bsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired)
