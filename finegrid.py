@@ -15,7 +15,7 @@ from intmodels import models #This interpolates the models to a small grid
 from intspec import intmodel #This compares models to the spectrum
 
 
-def makefinegrid(blambdas,bnline,bsigma,lambdaindex,bestT,bestg,lambdas,zzcetiblue,zzcetired):
+def makefinegrid(blambdas,bnline,bsigma,lambdaindex,bestT,bestg,lambdas,zzcetiblue,zzcetired,FWHM):
     firstt = bestT#12500
     firstg = bestg#800
 
@@ -49,13 +49,13 @@ def makefinegrid(blambdas,bnline,bsigma,lambdaindex,bestT,bestg,lambdas,zzcetibl
 #Now we want to create our finer grid of Teff. We need to read in our interpolated models in logg
 #gridg is our set of logg's
 #Set up new grid for new Teffs
-    numbert = range(51)
+    numbert = range(101)
     #gridt = np.array([11750.,11800.,11850.,11900.,11950.,12000.,12050.,12100.,12150.,12200.,12250.])
     #gridt = np.array([12250.,12300.,12350.,12400.,12450.,12500.,12550.,12600.,12650.,12700.,12750.])
     #gridt = np.array([12500.,12510.,12520.,12530.,12540.,12550.,12560.,12570.,12580.,12590.,12600.,12610.,12620.,12630.,12640.,12650.,12660.,12670.,12680.,12690.,12700.])
     gridt = np.empty(len(numbert))
     for n in numbert:
-        gridt[n] = firstt-250.+10*n #########firstt-250.+10*n
+        gridt[n] = firstt-250.+5.*n #########firstt-250.+10*n
 
 #Begin iterating over different logg's to get finer Teffs
     for i in gridg:
@@ -78,4 +78,4 @@ def makefinegrid(blambdas,bnline,bsigma,lambdaindex,bestT,bestg,lambdas,zzcetibl
     case = 1 #We'll be comparing our new grid to the spectrum.
     filenames = 'interpolated_names.txt'
 
-    ncflux,bestT,bestg = intmodel(blambdas,bnline,bsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired)
+    ncflux,bestT,bestg = intmodel(blambdas,bnline,bsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM)

@@ -6,12 +6,14 @@ Created on Wed Jan 21 14:16:05 2015
 
 To do:
 - Save and plot chi-square surfaces so that we can fit them automatically.
+- Enter spec names and fwhm in command line
 
 Done:
 - Make sure interpolated models go out through H-alpha
 - Do we need to fit gamma to larger than the normalization range? Yes.
 - need to fit models to region larger than the normalization
 - automatically generate pseudo-gauss estimates for observed spectrum
+- Read in FWHM so that models are convolved correctly. 
 """
 #Based on fitspec.pro written by Bart Dunlap. Ported to python by Josh Fuchs
 #At the end of this program, it calls intspec.py to fit to the model. If you move
@@ -56,8 +58,10 @@ def multifitpseudogauss(p,fjac=None,x=None, y=None, err=None):
     return([status,(y-model)/err])
 
 #Now we need to read in actual spectrum. This is for Goodman spectra.
+#Eventually make this a command line parameters
 zzcetiblue = 'wnb.WD0122p0030_930_blue_fluxGD50.fits'
 zzcetired = 'wnb.WD0122p0030_930_red_fluxGD50.fits'
+FWHM = 4.4
 
 #Read in the blue spectrum
 datalistblue = pf.open(zzcetiblue)
@@ -507,23 +511,24 @@ restwavelength = np.array([6562.79,4862.71,4341.69,4102.89,3971.19,3890.16,3836.
 c = 2.99792e5
 velocity = c * (measuredcenter-restwavelength)/restwavelength
 
-plt.clf()
-plt.plot(restwavelength,velocity,'b^')
-plt.show()
+#plt.clf()
+#plt.plot(restwavelength,velocity,'b^')
+#plt.show()
 #alllambdas and allnline are used in intspec.py
 #Now call intspec.py to run the model program
 
 print "Starting intspec.py now "
 case = 0 #We'll be interpolating Koester's raw models
-filenames = 'shortlist.txt'
+filenames = 'modelnames.txt'
 #np.savetxt('norm_WD0122.dat',np.transpose([blambdas,bnline]))
-ncflux,bestT,bestg = intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired)
-#bestT, bestg = 12500, 800
-sys.exit()
+ncflux,bestT,bestg = intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM)
+#print bestT,bestg
+#bestT, bestg = 12250, 800
+#sys.exit()
 
 #######
 # Now we want to compute the finer grid
 # And then compute the Chi-square for
 # Each of those
 #######
-makefinegrid(alllambda,allnline,allsigma,lambdaindex,bestT,bestg,lambdas,zzcetiblue,zzcetired)
+makefinegrid(alllambda,allnline,allsigma,lambdaindex,bestT,bestg,lambdas,zzcetiblue,zzcetired,FWHM)

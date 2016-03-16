@@ -54,7 +54,7 @@ def multifitpseudogauss(p,fjac=None,x=None, y=None, err=None):
 #Case = 0 means using D. Koester's raw models
 #Case = 1 means using the interpolation of those models to a smaller grid.
 
-def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired):
+def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM):
 
     print 'Starting to run intspec.py'
     lambdarange = lambdas #This is the full wavelength range from blue and red setups.
@@ -73,7 +73,7 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         numt = (highestt - lowestt) / deltat + 1.
         gridt = np.linspace(lowestt,highestt,num=numt)
     if case == 1:
-        os.chdir('/afs/cas.unc.edu/depts/physics_astronomy/clemens/students/group/modelfitting/DA_models/Interpolated_Models')
+        os.chdir('/srv/two/jtfuchs/Interpolated_Models/center12250_800')
         files = np.genfromtxt(filenames,dtype='str')
         #Create array of all logg and Teff values for computation of errors
         lowestg = float(files[0][8:12]) / 1000.
@@ -148,12 +148,11 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
             #plt.plot(intlambda,checkint)
             #plt.show()
             #sys.exit()
-#Convolve each point with a Gaussian whose FWHM=4.6A
+#Convolve each point with a Gaussian with FWHM
 #FWHM = 2*sqrt(2*alog(2))*sigma
 #Let the gaussian go out +/- 180 bins = +/- 18A > 9*sig
 #This seems to get all the light numerically
 
-        FWHM = 4.4
         sig = FWHM / (2. * np.sqrt(2.*np.log(2.)))
 
 #Gaussian with area normalized to 1
@@ -323,9 +322,6 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
 
         #Choose the initial guesses in a smart AND consistent manner
         aest = np.zeros(7)
-        #aest[1] = (cflux2[ahi] - cflux2[alow]) / (alllambda[ahi] - alllambda[alow]) #slope of line for continuum
-        #aest[0] = cflux2[alow] - aest[1]*alllambda[alow] #y-intercept of line for continuum
-        #aest[2] = 0. #scale factor for second-order term. Start at zero.
         xes = np.array([lambdarange[alow],lambdarange[alow+10],lambdarange[ahi-10],lambdarange[ahi]])
         yes = np.array([cflux2[alow],cflux2[alow+10],cflux2[ahi-10],cflux2[ahi]])
         ap = np.polyfit(xes,yes,2)
@@ -346,9 +342,6 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         aest[6] = 1. #how much of a pseudo-gaussian
 
         best = np.zeros(7)
-        #best[1] = (cflux2[bhi] - cflux2[blow]) / (alllambda[bhi] - alllambda[blow]) #slope of line for continuum
-        #best[0] = cflux2[blow] - best[1]*alllambda[blow] #y-intercept of line for continuum
-        #best[2] = 0. #scale factor for second-order term. Start at zero.
         xes = np.array([lambdarange[blow],lambdarange[blow+10],lambdarange[bhi-10],lambdarange[bhi]])
         yes = np.array([cflux2[blow],cflux2[blow+10],cflux2[bhi-10],cflux2[bhi]])
         bp = np.polyfit(xes,yes,2)
@@ -361,9 +354,6 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         best[6] = 1. 
 
         gest = np.zeros(7)
-        #gest[1] = (cflux2[ghi] - cflux2[glow]) / (alllambda[ghi] - alllambda[glow]) #slope of line for continuum
-        #gest[0] = cflux2[glow] - gest[1]*alllambda[glow] #y-intercept of line for continuum
-        #gest[2] = 0. #scale factor for second-order term. Start at zero.
         #points are alllambda[glow], cflux2[glow]
         #           alllambda[glow+10], cflux2[glow+10]
         #           alllambda[ghi-10], cflux2[ghi-10]
@@ -380,9 +370,6 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         gest[6] = 1. 
 
         hest = np.zeros(23)
-        #hest[1] = (cflux2[dhi] - cflux2[H10low]) / (alllambda[dhi] - alllambda[H10low]) #slope of line for continuum
-        #hest[0] = cflux2[H10low] - hest[1]*alllambda[H10low] #y-intercept of line for continuum
-        #hest[2] = 0. #scale factor for second-order term. Start at zero.
         #Use three points to fit parabola over continuum. The above is just a line, parabola gives more consistent fit.
         #points are alllambda[H10low], cflux2[H10low]
         #           alllambda[elow], cflux2[elow]
@@ -432,7 +419,7 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         afa = {'x':alambdas, 'y':alphaval, 'err':asigmas}
         paralpha = [{'step':0.} for i in range(7)]
         paralpha[0]['step'] = 1e14
-        aparams = mpfit.mpfit(fitpseudogauss,aest,functkw=afa,maxiter=5000,ftol=1e-16,parinfo=paralpha) #might want to specify xtol=1e-14 or so too
+        aparams = mpfit.mpfit(fitpseudogauss,aest,functkw=afa,maxiter=3000,ftol=1e-16,parinfo=paralpha) #might want to specify xtol=1e-14 or so too
         alphafit = pseudogauss(alambdas,aparams.params)
 
         #print aest
@@ -451,7 +438,7 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         betaval = cflux2[bfitlow:bfithi+1.]
         bsigmas = np.ones(len(betaval))
         bfa = {'x':blambdas,'y':betaval,'err':bsigmas}
-        bparams = mpfit.mpfit(fitpseudogauss,best,functkw=bfa,maxiter=5000,ftol=1e-16)
+        bparams = mpfit.mpfit(fitpseudogauss,best,functkw=bfa,maxiter=3000,ftol=1e-16)
         betafit = pseudogauss(blambdas,bparams.params)
         #print filename
         #print best[0] - bparams.params[0]
@@ -468,7 +455,7 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         gamval = cflux2[gfitlow:gfithi+1.]
         gsigmas = np.ones(len(gamval))
         gfa = {'x':glambdas,'y':gamval,'err':gsigmas}
-        gparams = mpfit.mpfit(fitpseudogauss,gest,functkw=gfa,maxiter=5000,ftol=1e-16)
+        gparams = mpfit.mpfit(fitpseudogauss,gest,functkw=gfa,maxiter=3000,ftol=1e-16)
         gamfit = pseudogauss(glambdas,gparams.params)
         #print filename
         #print gest[0] - gparams.params[0]
@@ -484,7 +471,7 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         hval = cflux2[H10low:dhi+1.]
         hsigmas = np.ones(len(hval))
         hfa = {'x':hlambdas,'y':hval,'err':hsigmas}
-        hparams = mpfit.mpfit(multifitpseudogauss,hest,functkw=hfa,maxiter=5000,ftol=1e-16)
+        hparams = mpfit.mpfit(multifitpseudogauss,hest,functkw=hfa,maxiter=3000,ftol=1e-16)
         hfit = multipseudogauss(hlambdas,hparams.params)
         #print filename
         #plt.clf()
@@ -675,7 +662,7 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
     uppergerr = upperg - (bestg/1000.)
     lowergerr = (bestg/1000.) - lowerg
     gerr = (uppergerr + lowergerr) / 2.
-    plt.show()
+    #plt.show()
 
     #Save information on best fitting model and the convolved model itself
     if case == 1:
@@ -705,7 +692,7 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
     plt.plot(alllambda,allnline,'bs',label='Normalized data')
     plt.plot(alllambda,bestmodel,'r^',label='Model')
     plt.legend()
-    plt.show()
+    #plt.show()
     return ncflux,bestT,bestg
 
 

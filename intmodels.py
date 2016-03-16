@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import RectBivariateSpline
 import os
+import datetime
 
 def models(filenames,grid,case):
     print 'Starting to run intmodels.py'
@@ -20,7 +21,8 @@ def models(filenames,grid,case):
     if case == 0:
         os.chdir('/afs/cas.unc.edu/depts/physics_astronomy/clemens/students/group/modelfitting/DA_models/')
     if case == 1:
-        os.chdir('/afs/cas.unc.edu/depts/physics_astronomy/clemens/students/group/modelfitting/DA_models/Interpolated_Models/')
+        os.chdir('/srv/two/jtfuchs/Interpolated_Models/')
+        #os.chdir('/afs/cas.unc.edu/depts/physics_astronomy/clemens/students/group/modelfitting/DA_models/Interpolated_Models/')
 
     filename1 = filenames[0]
     filename2 = filenames[1]
@@ -206,7 +208,8 @@ def models(filenames,grid,case):
 
     #Write and save files
     print 'Starting to save files.'
-    os.chdir('/afs/cas.unc.edu/depts/physics_astronomy/clemens/students/group/modelfitting/DA_models/Interpolated_Models/') #Save all interpolated models here.
+    #os.chdir('/afs/cas.unc.edu/depts/physics_astronomy/clemens/students/group/modelfitting/DA_models/Interpolated_Models/') #Save all interpolated models here.
+    os.chdir('/srv/two/jtfuchs/Interpolated_Models/')
     if case == 0:
         newg = np.multiply(grid,1000.)
         n = 0
@@ -215,6 +218,11 @@ def models(filenames,grid,case):
             thisg = thisg[:-2]
             newfile = 'da' + str(teff) + '_' + thisg + '.jf'
             np.savetxt(newfile,np.transpose([intlambda,intfluxes[n]]))
+            #Write out last file saved and time
+            now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M")
+            f = open('lastsaved.txt','a')
+            f.write(newfile + ',' + now + '\n')
+            f.close()
             n += 1
         
     if case ==1:
@@ -224,4 +232,9 @@ def models(filenames,grid,case):
             thist = thist[:-2]
             newfile = 'da' + thist + '_' + logg + '.jf'  
             np.savetxt(newfile,np.transpose([intlambda,intfluxes[n]])) 
+            #Write out last file saved and time
+            now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M")
+            f = open('lastsaved.txt','a')
+            f.write(newfile + ',' + now + '\n')
+            f.close()
             n += 1          
