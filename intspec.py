@@ -669,7 +669,7 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         f = open('fitting_solutions.txt','a')
         now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M")
         bestmodelname = 'da' + str(bestT) + '_' + str(bestg) + '.jf'
-        info = zzcetiblue + ',' + zzcetired + ',' +  bestmodelname + ',' + bestT + ',' +  Terr + ',' + bestg + ',' + gerr + ',' + now
+        info = zzcetiblue + '\t' + zzcetired + '\t' +  bestmodelname + '\t' + str(bestT) + '\t' +  str(Terr) + '\t' + str(bestg) + '\t' + str(gerr) + '\t' + now
         f.write(info + '\n')
         f.close()
         #Now save the best convolved model

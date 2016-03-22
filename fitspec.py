@@ -519,12 +519,12 @@ velocity = c * (measuredcenter-restwavelength)/restwavelength
 
 print "Starting intspec.py now "
 case = 0 #We'll be interpolating Koester's raw models
-filenames = 'modelnames.txt'
+filenames = 'shortlist.txt'
 #np.savetxt('norm_WD0122.dat',np.transpose([blambdas,bnline]))
 ncflux,bestT,bestg = intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM)
 #print bestT,bestg
 #bestT, bestg = 12250, 800
-#sys.exit()
+sys.exit()
 
 #######
 # Now we want to compute the finer grid
