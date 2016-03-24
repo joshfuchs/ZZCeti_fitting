@@ -26,12 +26,12 @@ def makefinegrid(blambdas,bnline,bsigma,lambdaindex,bestT,bestg,lambdas,zzcetibl
 #Set up finer grid for log(g)
 #grid should go from best log(g) -.5 to best log(g) +.5 in steps of 0.05
 # firstg/100.-0.5 + 0.05*n
-    numberg = range(201) #Normally want this to be 201##############
+    numberg = range(101) #Normally want this to be 201##############
     #gridg = np.array([7.75,7.80,7.85,7.90,7.95,8.00,8.05,8.10,8.15,8.20,8.25])
     #gridg = np.array([7.84,7.85,7.86,7.87,7.88,7.89,7.90,7.91,7.92])
     gridg = np.empty(len(numberg))
     for n in numberg:
-        gridg[n] =  (firstg/100.-0.5 + 0.005*n) #############(firstg/100.-0.5 + 0.005*n)   (firstg/100.-0.25+0.05*n)
+        gridg[n] =  (firstg/100.-0.25 + 0.005*n) #############(firstg/100.-0.5 + 0.005*n)   (firstg/100.-0.25+0.05*n)
 
 #Begin iterating over different Teffs to get finer log(g)'s
     for i in testt:
@@ -40,7 +40,7 @@ def makefinegrid(blambdas,bnline,bsigma,lambdaindex,bestT,bestg,lambdas,zzcetibl
         filenames = ['da' + str(i) + '_' + str(testg[0]) + '.dk','da' + str(i) + '_' + str(testg[1]) + '.dk','da' + str(i) + '_' + str(testg[2]) + '.dk','da' + str(i) + '_' + str(testg[3]) + '.dk','da' + str(i) + '_' + str(testg[4]) + '.dk']
         grid = gridg
         case = 0 # Use 0 for log(g) interp. and 1 for Teff interp. Just a binary switch.
-        #models(filenames,grid,case)
+        models(filenames,grid,case)
         print 'Made it back!'
 
 
@@ -67,13 +67,13 @@ def makefinegrid(blambdas,bnline,bsigma,lambdaindex,bestT,bestg,lambdas,zzcetibl
     
         grid = gridt
         case = 1 # Use 0 for log(g) interp. and 1 for Teff interp. Just a binary switch.
-        #models(filenames,grid,case)
+        models(filenames,grid,case)
         print 'Made it back!'
 
 
     print 'Done with all the log(g)s.'
     print 'The finer grid is complete!'
-    #sys.exit()
+    sys.exit()
 #Now we want to compare this finer grid to our spectrum.
     case = 1 #We'll be comparing our new grid to the spectrum.
     filenames = 'interpolated_names.txt'

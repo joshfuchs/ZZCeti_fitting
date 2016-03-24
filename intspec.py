@@ -593,9 +593,48 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         #    plt.legend()
         #    plt.show()
         #    np.savetxt('bestfit_12550_7880.dat',np.transpose([blambdas,ncflux]))
+        '''
+        obsalpha = allnline[alow:ahi+1.]
+        obsbeta = allnline[blow:bhi+1.]
+        obsgamma = allnline[glow:ghi+1.]
+        obsdelta = allnline[dlow:dhi+1]
+        obsepsilon = allnline[elow:ehi+1]
+        obs8 = allnline[H8low:H8hi+1]
+        obs9 = allnline[H9low:H9hi+1]
+        obs10 = allnline[H10low:H10hi+1]
 
-        #if dracula == 'da11500_800.dk':
-        #    np.savetxt('norm_11500_800.dat',np.transpose([blambdas,ncflux]))
+        obsalphasig = allsigma[alow:ahi+1.]
+        obsbetasig = allsigma[blow:bhi+1.]
+        obsgammasig = allsigma[glow:ghi+1.]
+        obsdeltasig = allsigma[dlow:dhi+1]
+        obsepsilonsig = allsigma[elow:ehi+1]
+        obs8sig = allsigma[H8low:H8hi+1]
+        obs9sig = allsigma[H9low:H9hi+1]
+        obs10sig = allsigma[H10low:H10hi+1]
+
+        chisalpha = np.empty([numg,numt])
+        chisbeta = np.empty([numg,numt])
+        chisgamma = np.empty([numg,numt])
+        chisdelta = np.empty([numg,numt])
+        chisepsilon = np.empty([numg,numt])
+        chis8 = np.empty([numg,numt])
+        chis9 = np.empty([numg,numt])
+        chis10 = np.empty([numg,numt])
+ 
+        chisalpha[ng][nt] = np.sum(((obsalpha - anflux) / obsalphasig)**2.,dtype='d')
+        chisbeta[ng][nt] = np.sum(((obsbeta -bnflux) / obsbetasig)**2.,dtype='d')
+        chisgamma[ng][nt] = np.sum(((obsgamma - gnflux) / obsgammasig)**2.,dtype='d')
+        chisdelta[ng][nt] = np.sum(((obsdelta - dnflux) / obsdeltasig)**2.,dtype='d')
+        chisepsilon[ng][nt] = np.sum(((obsepsilon - enflux) / obsepsilonsig)**2.,dtype='d')
+        chis8[ng][nt] = np.sum(((obs8 - H8nflux) / obs8sig)**2.,dtype='d')
+        chis9[ng][nt] = np.sum(((obs9 - H9nflux) / obs9sig)**2.,dtype='d')
+        chis10[ng][nt] = np.sum(((obs10 - H10nflux) / obs10sig)**2.,dtype='d')
+        '''
+
+
+        #Save interpolated and normalized model
+        intmodelname = 'da' + str(teff) + '_' + str(logg) + '_norm.txt'
+        np.savetxt(intmodelname,np.transpose([alllambda,ncflux]))
 
         #Calculate residuals and chi-square
         if n == 0:
@@ -639,7 +678,6 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
     #if case == 1:
     #First subtract the best chi-squared from all chi-squared values
     deltachi = np.subtract(chis,bestchi)
-    np.savetxt('deltachi.txt',deltachi)
     plt.clf()
     v = np.array([1.0])
     plt.figure()
@@ -665,16 +703,20 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
     #plt.show()
 
     #Save information on best fitting model and the convolved model itself
+    f = open('fitting_solutions.txt','a')
+    now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M")
+    if case == 0:
+        bestmodelname = 'da' + str(int(bestT)) + '_' + str(int(bestg)) + '.dk'
     if case == 1:
-        f = open('fitting_solutions.txt','a')
-        now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M")
-        bestmodelname = 'da' + str(bestT) + '_' + str(bestg) + '.jf'
-        info = zzcetiblue + '\t' + zzcetired + '\t' +  bestmodelname + '\t' + str(bestT) + '\t' +  str(Terr) + '\t' + str(bestg) + '\t' + str(gerr) + '\t' + now
-        f.write(info + '\n')
-        f.close()
-        #Now save the best convolved model
-        newmodel = 'model_' + zzcetiblue[4:-22] + '.txt' #NEED TO CHECK THIS TO MAKE SURE IT WORKS GENERALLY
-        np.savetxt(newmodel,np.transpose([alllambda,bestmodel]))
+        bestmodelname = 'da' + str(int(bestT)) + '_' + str(int(bestg)) + '.jf'
+    info = zzcetiblue + '\t' + zzcetired + '\t' +  bestmodelname + '\t' + str(bestT) + '\t' +  str(Terr) + '\t' + str(bestg) + '\t' + str(gerr) + '\t' + str(bestchi) + '\t' + now
+    f.write(info + '\n')
+    f.close()
+    #Now save the best convolved model and delta chi squared surface
+    newmodel = 'model_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '.txt' #NEED TO CHECK THIS TO MAKE SURE IT WORKS GENERALLY
+    np.savetxt(newmodel,np.transpose([alllambda,bestmodel]))
+    deltaname = 'deltachi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '.txt'
+    np.savetxt(deltaname,deltachi)
 
 
     print ''
@@ -693,7 +735,7 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
     plt.plot(alllambda,bestmodel,'r^',label='Model')
     plt.legend()
     #plt.show()
-    return ncflux,bestT,bestg
+    return ncflux,int(bestT),int(bestg)
 
 
 

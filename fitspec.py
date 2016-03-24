@@ -78,7 +78,7 @@ for i in ivalblue:
 
 #Read in the red spectrum
 datalistred = pf.open(zzcetired)
-datavalred = datalistred[0].data[1,0,:] #Reads in the object spectrum, data[2,0,:] is sky
+datavalred = datalistred[0].data[1,0,:] #data[0,0,:] is optimally extracted, data[2,0,:] is sky
 sigmavalred = datalistred[0].data[3,0,:] #Sigma spectrum
 wav0red = datalistred[0].header['crval1']
 deltawavred = datalistred[0].header['cd1_1']
@@ -93,7 +93,7 @@ for i in ivalred:
 #Concatenate both into two arrays
 lambdas = np.concatenate((lambdasblue,lambdasred))
 dataval = np.concatenate((datavalblue,datavalred))
-sigmaval = np.concatenate((sigmavalblue,sigmavalred))
+sigmaval = 2.e-17 * np.ones(len(dataval))#np.concatenate((sigmavalblue,sigmavalred))
 '''
 #Read in text file
 lambdas, dataval = np.genfromtxt('rawmodel.dat',unpack=True) #Files from Bart
@@ -519,12 +519,12 @@ velocity = c * (measuredcenter-restwavelength)/restwavelength
 
 print "Starting intspec.py now "
 case = 0 #We'll be interpolating Koester's raw models
-filenames = 'shortlist.txt'
+filenames = 'modelnames.txt'
 #np.savetxt('norm_WD0122.dat',np.transpose([blambdas,bnline]))
-ncflux,bestT,bestg = intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM)
+#ncflux,bestT,bestg = intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM)
 #print bestT,bestg
-#bestT, bestg = 12250, 800
-sys.exit()
+bestT, bestg = 12750, 800
+#sys.exit()
 
 #######
 # Now we want to compute the finer grid
