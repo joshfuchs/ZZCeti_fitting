@@ -15,7 +15,7 @@ from intmodels import models #This interpolates the models to a small grid
 from intspec import intmodel #This compares models to the spectrum
 
 
-def makefinegrid(blambdas,bnline,bsigma,lambdaindex,bestT,bestg,lambdas,zzcetiblue,zzcetired,FWHM):
+def makefinegrid(blambdas,bnline,bsigma,lambdaindex,bestT,bestg,lambdas,zzcetiblue,zzcetired,FWHM,indices):
     firstt = bestT#12500
     firstg = bestg#800
 
@@ -40,7 +40,7 @@ def makefinegrid(blambdas,bnline,bsigma,lambdaindex,bestT,bestg,lambdas,zzcetibl
         filenames = ['da' + str(i) + '_' + str(testg[0]) + '.dk','da' + str(i) + '_' + str(testg[1]) + '.dk','da' + str(i) + '_' + str(testg[2]) + '.dk','da' + str(i) + '_' + str(testg[3]) + '.dk','da' + str(i) + '_' + str(testg[4]) + '.dk']
         grid = gridg
         case = 0 # Use 0 for log(g) interp. and 1 for Teff interp. Just a binary switch.
-        models(filenames,grid,case)
+        #models(filenames,grid,case)
         print 'Made it back!'
 
 
@@ -67,15 +67,15 @@ def makefinegrid(blambdas,bnline,bsigma,lambdaindex,bestT,bestg,lambdas,zzcetibl
     
         grid = gridt
         case = 1 # Use 0 for log(g) interp. and 1 for Teff interp. Just a binary switch.
-        models(filenames,grid,case)
+        #models(filenames,grid,case)
         print 'Made it back!'
 
 
     print 'Done with all the log(g)s.'
     print 'The finer grid is complete!'
-    sys.exit()
+    #sys.exit()
 #Now we want to compare this finer grid to our spectrum.
     case = 1 #We'll be comparing our new grid to the spectrum.
     filenames = 'interpolated_names.txt'
 
-    ncflux,bestT,bestg = intmodel(blambdas,bnline,bsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM)
+    ncflux,bestT,bestg = intmodel(blambdas,bnline,bsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices)

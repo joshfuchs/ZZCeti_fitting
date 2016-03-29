@@ -54,7 +54,36 @@ def multifitpseudogauss(p,fjac=None,x=None, y=None, err=None):
 #Case = 0 means using D. Koester's raw models
 #Case = 1 means using the interpolation of those models to a smaller grid.
 
-def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM):
+def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices):
+
+    '''
+    :DESCRIPTION: Interpolates and convolves DA models to match observed spectra. Fits pseudogaussians to DA models and compares to normalized, observed spectra. Save chi-square values.
+
+    :INPUTS
+       alllambda: 1D numpy array, observed wavelengths
+
+       allnline: 1D numpy array, observed, normalized Balmer line fluxes
+
+       allsigma: 1D numpy array, sigma values for fluxes
+
+       lambdaindex: 1D numpy array, index value for fitting of the Balmer lines for wavelengths
+
+       case: boolean, Case = 0 means using D. Koester's raw models, Case = 1 means using the interpolation of those models to a smaller grid.
+
+       filenames: string, name of the text file that has the list of models to compare the spectrum to
+
+       lambdas: 1D numpy array, all observed wavelength values. Needed for interpolation and convolution of models
+
+       zzcetiblue: string, name of blue spectrum. Used for saving new files
+
+       zzcetired: string, name of red spectrum, Used for saving new files
+
+       FWHM: float, observed FWHM of spectrum. Used for convolving the models
+
+       indices: 1D numpy array, indices to break up alllambda, allnline, and allsigma into individual balmer lines. Starts with highest order line and goes through H alpha.
+
+    '''
+
 
     print 'Starting to run intspec.py'
     lambdarange = lambdas #This is the full wavelength range from blue and red setups.
@@ -73,7 +102,7 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         numt = (highestt - lowestt) / deltat + 1.
         gridt = np.linspace(lowestt,highestt,num=numt)
     if case == 1:
-        os.chdir('/srv/two/jtfuchs/Interpolated_Models/center12250_800')
+        os.chdir('/srv/two/jtfuchs/Interpolated_Models/center12750_800')
         files = np.genfromtxt(filenames,dtype='str')
         #Create array of all logg and Teff values for computation of errors
         lowestg = float(files[0][8:12]) / 1000.
@@ -135,8 +164,6 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
 #InterpolatedUnivariateSpline seems to work as well as interp1d
 #and is significantly faster.
             intflux = interp(intlambda)
-            #intflux2 = interp2(intlambda)
-            #checkint = intflux/intflux2 - 1.
             print 'Done with the 1D interpolation of the model'
             
 
@@ -176,20 +203,17 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
 #at 1/10 of an Angstrom.
 
         gf = np.divide(np.outer(intflux,gauss),10.)
-        #gf2 = np.divide(np.outer(intflux2,gauss),10.)
 
 #Sum the diagonals to get the flux for each wavelength
 # Use np.diagonal. Want each sum to move down the matrix, so 
 #setting axis1 and axis2 so that happens.
         length = len(intflux) - 360
         cflux = np.zeros(length)
-        #cflux2 = np.zeros(length)
         clambda = intlambda[180:len(intlambda)-180]
 
         x  = 0
         while x < length:
             cflux[x] = np.sum(np.diagonal(gf,x,axis1=1,axis2=0),dtype='d')
-            #cflux2[x] = np.sum(np.diagonal(gf2,x,axis1=1,axis2=0),dtype='d')
             x += 1
     
         #plt.clf()
@@ -197,12 +221,6 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         #plt.plot(clambda,cflux2,'r^',label='k=2')
         #plt.legend()
         #plt.show()
-        
-        #checkint = cflux/cflux2 - 1.
-        #plt.clf()
-        #plt.plot(clambda,checkint)
-        #plt.show()
-        #sys.exit()
 
 #Now we need to spline interpolate the convolved model and read out points
 #at the corresponding wavelength of the actual spectrum
@@ -585,56 +603,37 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         #newfilename = 'da_norm_' + str(logg) + '_' + str(teff) + '.txt'
         #np.savetxt(newfilename,np.transpose([alllambda,ncflux]))
 
-#plot the results.
-        #if dracula == 'da12550_7880.jf':
-        #    plt.clf()
-        #    plt.plot(blambdas,bnline,'bs',label='Normalized data')
-        #    plt.plot(blambdas,ncflux,'r^',label='Model')
-        #    plt.legend()
-        #    plt.show()
-        #    np.savetxt('bestfit_12550_7880.dat',np.transpose([blambdas,ncflux]))
-        '''
-        obsalpha = allnline[alow:ahi+1.]
-        obsbeta = allnline[blow:bhi+1.]
-        obsgamma = allnline[glow:ghi+1.]
-        obsdelta = allnline[dlow:dhi+1]
-        obsepsilon = allnline[elow:ehi+1]
-        obs8 = allnline[H8low:H8hi+1]
-        obs9 = allnline[H9low:H9hi+1]
-        obs10 = allnline[H10low:H10hi+1]
+        #Get the observed fluxes and sigma for each line so that we can compute chi square for each line individually
+        obsalpha = allnline[indices[14]:+indices[15]+1]
+        obsbeta = allnline[indices[12]:indices[13]+1]
+        obsgamma = allnline[indices[10]:indices[11]+1]
+        obsdelta = allnline[indices[8]:indices[9]+1]
+        obsepsilon = allnline[indices[6]:indices[7]+1]
+        obs8 = allnline[indices[4]:indices[5]+1]
+        obs9 = allnline[indices[2]:indices[3]+1]
+        obs10 = allnline[indices[0]:indices[1]+1]
 
-        obsalphasig = allsigma[alow:ahi+1.]
-        obsbetasig = allsigma[blow:bhi+1.]
-        obsgammasig = allsigma[glow:ghi+1.]
+        obsalphasig = allsigma[indices[14]:+indices[15]+1]
+        obsbetasig = allsigma[indices[12]:indices[13]+1]
+        obsgammasig = allsigma[indices[10]:indices[11]+1]
+        obsdeltasig = allsigma[indices[8]:indices[9]+1]
+        obsepsilonsig = allsigma[indices[6]:indices[7]+1]
+        obs8sig = allsigma[indices[4]:indices[5]+1]
+        obs9sig = allsigma[indices[2]:indices[3]+1]
+        obs10sig = allsigma[indices[0]:indices[1]+1]
+        '''
+        obsalphasig = allsigma[alow:ahi+1]
+        obsbetasig = allsigma[blow:bhi+1]
+        obsgammasig = allsigma[glow:ghi+1]
         obsdeltasig = allsigma[dlow:dhi+1]
         obsepsilonsig = allsigma[elow:ehi+1]
         obs8sig = allsigma[H8low:H8hi+1]
         obs9sig = allsigma[H9low:H9hi+1]
         obs10sig = allsigma[H10low:H10hi+1]
-
-        chisalpha = np.empty([numg,numt])
-        chisbeta = np.empty([numg,numt])
-        chisgamma = np.empty([numg,numt])
-        chisdelta = np.empty([numg,numt])
-        chisepsilon = np.empty([numg,numt])
-        chis8 = np.empty([numg,numt])
-        chis9 = np.empty([numg,numt])
-        chis10 = np.empty([numg,numt])
- 
-        chisalpha[ng][nt] = np.sum(((obsalpha - anflux) / obsalphasig)**2.,dtype='d')
-        chisbeta[ng][nt] = np.sum(((obsbeta -bnflux) / obsbetasig)**2.,dtype='d')
-        chisgamma[ng][nt] = np.sum(((obsgamma - gnflux) / obsgammasig)**2.,dtype='d')
-        chisdelta[ng][nt] = np.sum(((obsdelta - dnflux) / obsdeltasig)**2.,dtype='d')
-        chisepsilon[ng][nt] = np.sum(((obsepsilon - enflux) / obsepsilonsig)**2.,dtype='d')
-        chis8[ng][nt] = np.sum(((obs8 - H8nflux) / obs8sig)**2.,dtype='d')
-        chis9[ng][nt] = np.sum(((obs9 - H9nflux) / obs9sig)**2.,dtype='d')
-        chis10[ng][nt] = np.sum(((obs10 - H10nflux) / obs10sig)**2.,dtype='d')
         '''
-
-
         #Save interpolated and normalized model
-        intmodelname = 'da' + str(teff) + '_' + str(logg) + '_norm.txt'
-        np.savetxt(intmodelname,np.transpose([alllambda,ncflux]))
+        #intmodelname = 'da' + str(teff) + '_' + str(logg) + '_norm.txt'
+        #np.savetxt(intmodelname,np.transpose([alllambda,ncflux]))
 
         #Calculate residuals and chi-square
         if n == 0:
@@ -643,6 +642,14 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
             allg = np.empty(len(files))
             allt = np.empty(len(files))
             chis = np.empty([numg,numt]) #logg by Teff #######
+            chisalpha = np.empty([numg,numt])
+            chisbeta = np.empty([numg,numt])
+            chisgamma = np.empty([numg,numt])
+            chisdelta = np.empty([numg,numt])
+            chisepsilon = np.empty([numg,numt])
+            chis8 = np.empty([numg,numt])
+            chis9 = np.empty([numg,numt])
+            chis10 = np.empty([numg,numt])
         residual[n] =  np.sum((allnline - ncflux)**2.,dtype='d')
         chisq[n] = np.sum(((allnline - ncflux) / allsigma)**2.,dtype='d')
         allg[n] = logg
@@ -650,11 +657,18 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         if case == 0:
             ng = ((logg/100.) - lowestg) / deltag
             nt = (teff - lowestt) / deltat
-            chis[ng][nt] = chisq[n] #save values in a matrix
         if case == 1:
             ng = ((logg/1000.) - lowestg) / deltag
             nt = (teff - lowestt) / deltat
-            chis[ng][nt] = chisq[n] #Save values in a matrix
+        chis[ng][nt] = chisq[n] #Save values in a matrix
+        chisalpha[ng][nt] = np.sum(((obsalpha - anflux) / obsalphasig)**2.,dtype='d')
+        chisbeta[ng][nt] = np.sum(((obsbeta -bnflux) / obsbetasig)**2.,dtype='d')
+        chisgamma[ng][nt] = np.sum(((obsgamma - gnflux) / obsgammasig)**2.,dtype='d')
+        chisdelta[ng][nt] = np.sum(((obsdelta - dnflux) / obsdeltasig)**2.,dtype='d')
+        chisepsilon[ng][nt] = np.sum(((obsepsilon - enflux) / obsepsilonsig)**2.,dtype='d')
+        chis8[ng][nt] = np.sum(((obs8 - H8nflux) / obs8sig)**2.,dtype='d')
+        chis9[ng][nt] = np.sum(((obs9 - H9nflux) / obs9sig)**2.,dtype='d')
+        chis10[ng][nt] = np.sum(((obs10 - H10nflux) / obs10sig)**2.,dtype='d')
         print 'Chi-square is ',chisq[n]
         if n == 0:
             bestchi = chisq[n]
@@ -674,8 +688,6 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
 # Now we want to find the errors on the fit if we are looking at the fine grid
 
 
-
-    #if case == 1:
     #First subtract the best chi-squared from all chi-squared values
     deltachi = np.subtract(chis,bestchi)
     plt.clf()
@@ -717,6 +729,22 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
     np.savetxt(newmodel,np.transpose([alllambda,bestmodel]))
     deltaname = 'deltachi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '.txt'
     np.savetxt(deltaname,deltachi)
+    alphaname = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_alpha.txt'
+    np.savetxt(alphaname,chisalpha)
+    betaname = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_beta.txt'
+    np.savetxt(betaname,chisbeta)
+    gammaname = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_gamma.txt'
+    np.savetxt(gammaname,chisgamma)
+    deltaname = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_delta.txt'
+    np.savetxt(deltaname,chisdelta)
+    epsilonname = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_epsilon.txt'
+    np.savetxt(epsilonname,chisepsilon)
+    H8name = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_H8.txt'
+    np.savetxt(H8name,chis8)
+    H9name = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_H9.txt'
+    np.savetxt(H9name,chis9)
+    H10name = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_H10.txt'
+    np.savetxt(H10name,chis10)
 
 
     print ''
