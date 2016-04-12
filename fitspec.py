@@ -61,13 +61,16 @@ def multifitpseudogauss(p,fjac=None,x=None, y=None, err=None):
 
 #Now we need to read in actual spectrum. This is for Goodman spectra.
 #Eventually make this a command line parameters
-zzcetiblue = 'wnb.WD0122p0030_930_blue_fluxGD50.fits'
-zzcetired = 'wnb.WD0122p0030_930_red_fluxGD50.fits'
-FWHM = 4.4
+#zzcetiblue = 'wnb.WD0122p0030_930_blue_fluxGD50.fits'
+#zzcetired = 'wnb.WD0122p0030_930_red_fluxGD50.fits'
+#FWHM = 4.4
+zzcetiblue = 'wtfb.wd1425-811_930_blue_flux.ms.fits'
+zzcetired = 'wtfb.wd1425-811_930_red_flux.ms.fits' 
+FWHMpix = 6.1 #The FWHM in pixels
 
 #Read in the blue spectrum
 datalistblue = pf.open(zzcetiblue)
-datavalblue = datalistblue[0].data[1,0,:] #Reads in the object spectrum, data[2,0,:] is sky
+datavalblue = datalistblue[0].data[0,0,:] #Reads in the object spectrum,data[0,0,:] is optimally subtracted, data[1,0,:] is raw extraction,  data[2,0,:] is sky, data[3,0,:] is sigma spectrum
 sigmavalblue = datalistblue[0].data[3,0,:] #Sigma spectrum
 wav0blue = datalistblue[0].header['crval1']
 deltawavblue = datalistblue[0].header['cd1_1']
@@ -80,7 +83,7 @@ for i in ivalblue:
 
 #Read in the red spectrum
 datalistred = pf.open(zzcetired)
-datavalred = datalistred[0].data[1,0,:] #data[0,0,:] is optimally extracted, data[2,0,:] is sky
+datavalred = datalistred[0].data[0,0,:] #data[0,0,:] is optimally extracted, data[2,0,:] is sky
 sigmavalred = datalistred[0].data[3,0,:] #Sigma spectrum
 wav0red = datalistred[0].header['crval1']
 deltawavred = datalistred[0].header['cd1_1']
@@ -90,6 +93,8 @@ ivalred = np.arange(1,len(datavalred))
 
 for i in ivalred:
     lambdasred[i] = lambdasred[i-1] + deltawavred
+
+FWHM = FWHMpix * deltawavblue #FWHM in Angstroms
 
 
 #Concatenate both into two arrays
@@ -130,13 +135,13 @@ ghi = np.min(np.where(lambdas > 4490.))
 
 #hlow = np.min(np.where(lambdas > 3860.)) #For H8
 hlow = np.min(np.where(lambdas > 3782.)) #Includes H10 
-hhi = np.min(np.where(lambdas > 4191.))
+hhi = np.min(np.where(lambdas > 4195.)) #4191
 dlow = np.min(np.where(lambdas > 4040.))
 dhi = np.min(np.where(lambdas > 4191.))
 elow = np.min(np.where(lambdas > 3930.))
 ehi = np.min(np.where(lambdas > 4030.))
 H8low = np.min(np.where(lambdas > 3860.))
-H8hi = np.min(np.where(lambdas > 3930.))
+H8hi = np.min(np.where(lambdas > 3930.)) #3930
 H9low = np.min(np.where(lambdas > 3815.))
 H9hi = np.min(np.where(lambdas > 3855.))
 H10low = np.min(np.where(lambdas > 3785.))
@@ -345,6 +350,8 @@ H10center = hparams.params[20]
 #bnline is the normalized spectral line. Continuum set to one.
 
 #Start with alpha
+#Set the center of the line to the wavelength in vacuum. Models are in vacuum wavelengths.
+alambdas = alambdas - (acenter- 6564.60)
 #aslope = (alphafit[-1] - alphafit[0] ) / (alambdas[-1] - alambdas[0])
 #ali = aslope * (alambdas - alambdas[0]) + alphafit[0]
 #anline = dataval[alow:ahi+1] / ali
@@ -360,9 +367,6 @@ ali = aslope * (alambdasnew - alambdas[anormlow]) + alphafit[anormlow]
 anline = alphavalnew / ali
 asigma = asigmasnew / ali
 
-#Set the center of the line to the wavelength in vacuum. Models are in vacuum wavelengths.
-#alambdas = alambdas - (acenter- 6564.60)
-alambdas = alambdasnew - (acenter- 6564.60)
 
 #plt.clf()
 #plt.plot(alambdasnew,anline)
@@ -370,6 +374,8 @@ alambdas = alambdasnew - (acenter- 6564.60)
 #sys.exit()
 
 #Now to beta
+#Set the center of the line to the wavelength in vacuum. Models are in vacuum wavelengths.
+blambdas = blambdas - (bcenter-4862.710)
 #bslope = (betafit[-1] - betafit[0] ) / (blambdas[-1] - blambdas[0])
 #bli = bslope * (blambdas - blambdas[0]) + betafit[0]
 #bnline = dataval[blow:bhi+1] / bli
@@ -385,10 +391,6 @@ bli = bslope * (blambdasnew - blambdas[bnormlow]) + betafit[bnormlow]
 bnline = betavalnew / bli
 bsigma = bsigmasnew / bli
 
-#Set the center of the line to the wavelength in vacuum. Models are in vacuum wavelengths.
-#blambdas = blambdas - (bcenter-4862.710)
-blambdas = blambdasnew - (bcenter-4862.710)
-
 
 #plt.clf()
 #plt.plot(blambdas,bnline)
@@ -398,6 +400,8 @@ blambdas = blambdasnew - (bcenter-4862.710)
 
 #Now do gamma
 #gnline is the normalized spectral line. Continuum set to one.
+#Set the center of the line to the wavelength in vacuum
+glambdas = glambdas - (gcenter-4341.692)
 gnormlow = np.min(np.where(glambdas > 4220.))
 gnormhi = np.min(np.where(glambdas > 4490.))
 gslope = (gamfit[gnormhi] - gamfit[gnormlow] ) / (glambdas[gnormhi] - glambdas[gnormlow])
@@ -408,45 +412,99 @@ gli = gslope * (glambdasnew - glambdas[gnormlow]) + gamfit[gnormlow]
 gnline = gamvalnew / gli
 gsigma = gsigmasnew / gli
 
-#Set the center of the line to the wavelength in vacuum
-glambdas = glambdasnew - (gcenter-4341.692)
-
 #plt.clf()
 #plt.plot(glambdas,gnline)
 #plt.show()
 #sys.exit()
 
 #Now normalize the higher order lines (delta, epsilon, H8)
-dslope = (hfit[-1] - hfit[np.min(np.where(hlambdas > 4040))] ) / (lambdas[dhi] - lambdas[dlow])
-dli = dslope * (dlambdas - dlambdas[0]) + hfit[np.min(np.where(hlambdas > 4040))]
-dnline = dataval[dlow:dhi+1] / dli
-dsigma = sigmaval[dlow:dhi+1] / dli
-dlambdas = dlambdas - (dcenter-4102.892)
+hlambdastemp = hlambdas - (dcenter-4102.892)
+#dlambdas = dlambdas- (dcenter-4102.892)
+dnormlow = np.min(np.where(hlambdastemp > 4040.))
+dnormhi = np.min(np.where(hlambdastemp > 4191.))
+dlambdas = hlambdastemp[dnormlow:dnormhi+1]
+#dslope = (hfit[np.min(np.where(hlambdas > 4191.))] - hfit[np.min(np.where(hlambdas > 4040.))] ) / (lambdas[dhi] - lambdas[dlow])
+dslope = (hfit[dnormhi] - hfit[dnormlow]) / (hlambdastemp[dnormhi] - hlambdastemp[dnormlow])
+#dli = dslope * (dlambdas - dlambdas[0]) + hfit[np.min(np.where(hlambdas > 4040.))]
+dli = dslope * (dlambdas - dlambdas[0]) + hfit[dnormlow]
+#dvaltemp = dataval[dlow:dhi+1]
+#dsigtemp = sigmaval[dlow:dhi+1]
+dvaltemp = dataval[hlow:hhi+1]
+dsigtemp = sigmaval[hlow:hhi+1]
+dnline = dvaltemp[dnormlow:dnormhi+1] / dli
+dsigma = dsigtemp[dnormlow:dnormhi+1] / dli
 
-eslope = (hfit[np.min(np.where(hlambdas > 4030))] - hfit[np.min(np.where(hlambdas > 3930))] ) / (lambdas[ehi] - lambdas[elow])
-eli = eslope * (elambdas - elambdas[0]) + hfit[np.min(np.where(hlambdas > 3930))]
-enline = dataval[elow:ehi+1] / eli
-esigma = sigmaval[elow:ehi+1] / eli
-elambdas = elambdas - (ecenter-3971.198)
 
-H8slope = (hfit[np.min(np.where(hlambdas > 3930))] - hfit[np.min(np.where(hlambdas > 3860.))] ) / (lambdas[H8hi] - lambdas[H8low])
-H8li = H8slope * (H8lambdas - H8lambdas[0]) + hfit[np.min(np.where(hlambdas > 3860.))]
-H8nline = dataval[H8low:H8hi+1] / H8li
-H8sigma = sigmaval[H8low:H8hi+1] / H8li
-H8lambdas = H8lambdas - (H8center-3890.166)
+#elambdas = elambdas - (ecenter-3971.198)
+hlambdastemp = hlambdas - (ecenter-3971.198)
+enormlow = np.min(np.where(hlambdastemp > 3930.))
+enormhi = np.min(np.where(hlambdastemp > 4030.))
+elambdas = hlambdastemp[enormlow:enormhi+1]
+#eslope = (hfit[np.min(np.where(hlambdas > 4030.))] - hfit[np.min(np.where(hlambdas > 3930.))] ) / (lambdas[ehi] - lambdas[elow])
+#eli = eslope * (elambdas - elambdas[0]) + hfit[np.min(np.where(hlambdas > 3930.))]
+eslope = (hfit[enormhi] - hfit[enormlow] ) / (hlambdastemp[enormhi] - hlambdastemp[enormlow])
+eli = eslope * (elambdas - elambdas[0]) + hfit[enormlow]
+#evaltemp = dataval[elow:ehi+1]
+#esigtemp = sigmaval[elow:ehi+1]
+evaltemp = dataval[hlow:hhi+1]
+esigtemp = sigmaval[hlow:hhi+1]
+enline = evaltemp[enormlow:enormhi+1] / eli
+esigma = esigtemp[enormlow:enormhi+1] / eli
+
+
+#H8lambdas = H8lambdas - (H8center-3890.166)
+hlambdastemp = hlambdas - (H8center-3890.166)
+H8normlow = np.min(np.where(hlambdastemp > 3860.))
+H8normhi = np.min(np.where(hlambdastemp > 3930.))
+H8lambdas = hlambdastemp[H8normlow:H8normhi+1]
+#H8slope = (hfit[np.min(np.where(hlambdas > 3930.))] - hfit[np.min(np.where(hlambdas > 3860.))] ) / (lambdas[H8hi] - lambdas[H8low])
+#H8li = H8slope * (H8lambdas - H8lambdas[0]) + hfit[np.min(np.where(hlambdas > 3860.))]
+H8slope = (hfit[H8normhi] - hfit[H8normlow] ) / (hlambdastemp[H8normhi] - hlambdastemp[H8normlow])
+H8li = H8slope * (H8lambdas - H8lambdas[0]) + hfit[H8normlow]
+H8valtemp = dataval[hlow:hhi+1]
+H8sigtemp = sigmaval[hlow:hhi+1]
+#H8valtemp = dataval[H8low:H8hi+1]
+#H8sigtemp = sigmaval[H8low:H8hi+1]
+H8nline = H8valtemp[H8normlow:H8normhi+1] / H8li
+H8sigma = H8sigtemp[H8normlow:H8normhi+1] / H8li
+
 
 ### To normalize, using points from end of region since it is so small.
-H9slope = (hfit[np.min(np.where(hlambdas > 3855))] - hfit[np.min(np.where(hlambdas > 3815))] ) / (lambdas[H9hi] - lambdas[H9low])
-H9li = H9slope * (H9lambdas - H9lambdas[0]) + hfit[np.min(np.where(hlambdas > 3815))]
-H9nline = dataval[H9low:H9hi+1] / H9li
-H9sigma = sigmaval[H9low:H9hi+1] / H9li
-H9lambdas = H9lambdas - (H9center- 3836.485)
+#H9lambdas = H9lambdas - (H9center- 3836.485)
+hlambdastemp = hlambdas - (H9center- 3836.485)
+H9normlow = np.min(np.where(hlambdastemp > 3815.))
+H9normhi = np.min(np.where(hlambdastemp > 3855.))
+H9lambdas = hlambdastemp[H9normlow:H9normhi+1]
+#H9slope = (hfit[np.min(np.where(hlambdas > 3855.))] - hfit[np.min(np.where(hlambdas > 3815.))] ) / (lambdas[H9hi] - lambdas[H9low])
+#H9li = H9slope * (H9lambdas - H9lambdas[0]) + hfit[np.min(np.where(hlambdas > 3815.))]
+H9slope = (hfit[H9normhi] - hfit[H9normlow] ) / (hlambdastemp[H9normhi] - hlambdastemp[H9normlow])
+H9li = H9slope * (H9lambdas - H9lambdas[0]) + hfit[H9normlow]
+H9valtemp = dataval[hlow:hhi+1]
+H9sigtemp = sigmaval[hlow:hhi+1]
 
-H10slope = (hfit[np.min(np.where(hlambdas > 3815))] - hfit[np.min(np.where(hlambdas > 3785))] ) / (lambdas[H10hi] - lambdas[H10low])
-H10li = H10slope * (H10lambdas - H10lambdas[0]) + hfit[np.min(np.where(hlambdas > 3785))]
-H10nline = dataval[H10low:H10hi+1] / H10li
-H10sigma = sigmaval[H10low:H10hi+1] / H10li
-H10lambdas = H10lambdas - (H10center-3797.909)
+#H9valtemp = dataval[H9low:H9hi+1]
+#H9sigtemp = sigmaval[H9low:H9hi+1]
+H9nline = H9valtemp[H9normlow:H9normhi+1] / H9li
+H9sigma = H9sigtemp[H9normlow:H9normhi+1] / H9li
+
+
+#H10lambdas = H10lambdas - (H10center-3797.909)
+hlambdastemp = hlambdas - (H10center-3797.909)
+H10normlow = np.min(np.where(hlambdastemp > 3785.))
+H10normhi = np.min(np.where(hlambdastemp > 3815.))
+H10lambdas = hlambdastemp[H10normlow:H10normhi+1]
+#H10slope = (hfit[np.min(np.where(hlambdas > 3815.))] - hfit[np.min(np.where(hlambdas > 3785.))] ) / (lambdas[H10hi] - lambdas[H10low])
+#H10li = H10slope * (H10lambdas - H10lambdas[0]) + hfit[np.min(np.where(hlambdas > 3785.))]
+H10slope = (hfit[H10normhi] - hfit[H10normlow] ) / (hlambdastemp[H10normhi] - hlambdastemp[H10normlow])
+H10li = H10slope * (H10lambdas - H10lambdas[0]) + hfit[H10normlow]
+H10valtemp = dataval[hlow:hhi+1]
+H10sigtemp = sigmaval[hlow:hhi+1]
+
+#H10valtemp = dataval[H10low:H10hi+1]
+#H10sigtemp = sigmaval[H10low:H10hi+1]
+H10nline = H10valtemp[H10normlow:H10normhi+1] / H10li
+H10sigma = H10sigtemp[H10normlow:H10normhi+1] / H10li
+
 
 
 #plt.clf()
@@ -464,24 +522,25 @@ H10lambdas = H10lambdas - (H10center-3797.909)
 #plt.plot(H8lambdas,H8nline)
 #plt.show()
 #plt.clf()
-#plt.plot(H10lambdas,dataval[H10low:H10hi+1])
+#plt.plot(H9lambdas,H9nline)
 #plt.plot(H10lambdas,H10nline)
 #plt.show()
 #sys.exit()
 
 #Combine all the normalized lines together into one array for model fitting
 ###For Halpha through H10
-alllambda = np.concatenate((H10lambdas,H9lambdas,H8lambdas,elambdas,dlambdas,glambdas,blambdas,alambdas))
+alllambda = np.concatenate((H10lambdas,H9lambdas,H8lambdas,elambdas,dlambdas,glambdasnew,blambdasnew,alambdasnew))
 allnline = np.concatenate((H10nline,H9nline,H8nline,enline,dnline,gnline,bnline,anline))
 allsigma = np.concatenate((H10sigma,H9sigma,H8sigma,esigma,dsigma,gsigma,bsigma,asigma))
-indices  = [0,len(H10lambdas)-1.,len(H10lambdas),len(H10lambdas)+len(H9lambdas)-1.,len(H10lambdas)+len(H9lambdas),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)-1.,len(H10lambdas)+len(H9lambdas)+len(H8lambdas),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)-1.,len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)-1.,len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdas)-1.,len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdas),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdas)+len(blambdas)-1.,len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdas)+len(blambdas),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdas)+len(blambdas)+len(alambdas)-1.]
+indices  = [0,len(H10lambdas)-1.,len(H10lambdas),len(H10lambdas)+len(H9lambdas)-1.,len(H10lambdas)+len(H9lambdas),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)-1.,len(H10lambdas)+len(H9lambdas)+len(H8lambdas),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)-1.,len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)-1.,len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdasnew)-1.,len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdasnew),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdasnew)+len(blambdasnew)-1.,len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdasnew)+len(blambdasnew),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdasnew)+len(blambdasnew)+len(alambdasnew)-1.]
 lambdaindex = [afitlow,afithi,alow,ahi,bfitlow,bfithi,blow,bhi,gfitlow,gfithi,glow,ghi,hlow,hhi,dlow,dhi,elow,ehi,H8low,H8hi,H9low,H9hi,H10low,H10hi]
+#print len(H10nline),len(H9nline),len(H8nline),len(enline),len(dnline),len(gnline),len(bnline),len(anline)
 
 ######For Halpha through H8
 #alllambda = np.concatenate((H8lambdas,elambdas,dlambdas,glambdas,blambdas,alambdas))
 #allnline = np.concatenate((H8nline,enline,dnline,gnline,bnline,anline))
 #allsigma = np.concatenate((H8sigma,esigma,dsigma,gsigma,bsigma,asigma))
-#lambdaindex = [0,len(H8lambdas)-1.,len(H8lambdas),len(H8lambdas)+len(elambdas)-1.,len(H8lambdas)+len(elambdas),len(H8lambdas)+len(elambdas)+len(dlambdas)-1.,len(H8lambdas)+len(elambdas)+len(dlambdas),len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdas)-1.,len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdas),len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdas)+len(blambdas)-1.,len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdas)+len(blambdas),len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdas)+len(blambdas)+len(alambdas)-1.]
+#lambdaindex = [0,len(H8lambdas)-1.,len(H8lambdas),len(H8lambdas)+len(elambdas)-1.,len(H8lambdas)+len(elambdas),len(H8lambdas)+len(elambdas)+len(dlambdas)-1.,len(H8lambdas)+len(elambdas)+len(dlambdas),len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdasnew)-1.,len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdasnew),len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdasnew)+len(blambdasnew)-1.,len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdasnew)+len(blambdasnew),len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdasnew)+len(blambdasnew)+len(alambdasnew)-1.]
 
 ######For Halpha through H9
 #alllambda = np.concatenate((H9lambdas,H8lambdas,elambdas,dlambdas,glambdas,blambdas,alambdas))
@@ -502,7 +561,7 @@ lambdaindex = [afitlow,afithi,alow,ahi,bfitlow,bfithi,blow,bhi,gfitlow,gfithi,gl
 #lambdaindex = [0,len(H9lambdas)-1.,len(H9lambdas),len(H9lambdas)+len(H8lambdas)-1.,len(H9lambdas)+len(H8lambdas),len(H9lambdas)+len(H8lambdas)+len(elambdas)-1.,len(H9lambdas)+len(H8lambdas)+len(elambdas),len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)-1.,len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas),len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdas)-1.,len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdas),len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdas)+len(blambdas)-1.]
 
 #plt.clf()
-#plt.plot(alllambda,allnline,'b^')
+#plt.plot(alllambda,allnline)
 #plt.show()
 #print len(alllambda)
 #print lambdaindex
@@ -522,15 +581,28 @@ velocity = c * (measuredcenter-restwavelength)/restwavelength
 print "Starting intspec.py now "
 case = 0 #We'll be interpolating Koester's raw models
 filenames = 'modelnames.txt'
+path = '/afs/cas.unc.edu/depts/physics_astronomy/clemens/students/group/modelfitting/DA_models'
 #np.savetxt('norm_WD0122.dat',np.transpose([blambdas,bnline]))
-ncflux,bestT,bestg = intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices)
+#ncflux,bestT,bestg = intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path)
 #print bestT,bestg
-#bestT, bestg = 12750, 800
+bestT, bestg = 12750, 825
 #sys.exit()
 
 #######
 # Now we want to compute the finer grid
-# And then compute the Chi-square for
-# Each of those
 #######
-makefinegrid(alllambda,allnline,allsigma,lambdaindex,bestT,bestg,lambdas,zzcetiblue,zzcetired,FWHM,indices)
+makefinegrid(bestT,bestg)
+sys.exit()
+###################
+# Compute the Chi-square for
+# Each of those
+###################
+
+case = 1 #We'll be comparing our new grid to the spectrum.
+filenames = 'interpolated_names.txt'
+path = '/srv/two/jtfuchs/Interpolated_Models/center' + str(bestT) + '_' + str(bestg)
+ncflux,bestT,bestg = intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path)
+
+
+
+

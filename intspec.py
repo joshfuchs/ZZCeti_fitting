@@ -8,15 +8,12 @@ Created on Sun Jan 18 20:16:17 2015
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy
-from scipy.interpolate import interp1d
 from scipy.interpolate import InterpolatedUnivariateSpline
 import os
 import sys
 import datetime
 import mpfit
 #import pyfits as pf # Infierno doesn't support astropy for some reason so using pyfits
-
-
 
 #ported to python from IDL by Josh Fuchs
 #Based on the IDL routine written by Bart Dunlap
@@ -54,7 +51,7 @@ def multifitpseudogauss(p,fjac=None,x=None, y=None, err=None):
 #Case = 0 means using D. Koester's raw models
 #Case = 1 means using the interpolation of those models to a smaller grid.
 
-def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices):
+def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path):
 
     '''
     :DESCRIPTION: Interpolates and convolves DA models to match observed spectra. Fits pseudogaussians to DA models and compares to normalized, observed spectra. Save chi-square values.
@@ -78,9 +75,11 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
 
        zzcetired: string, name of red spectrum, Used for saving new files
 
-       FWHM: float, observed FWHM of spectrum. Used for convolving the models
+       FWHM: float, observed FWHM in Angstroms of spectrum. Used for convolving the models
 
        indices: 1D numpy array, indices to break up alllambda, allnline, and allsigma into individual balmer lines. Starts with highest order line and goes through H alpha.
+
+       path: string, file path path to models
 
     '''
 
@@ -88,7 +87,7 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
     print 'Starting to run intspec.py'
     lambdarange = lambdas #This is the full wavelength range from blue and red setups.
     if case == 0:
-        os.chdir('/afs/cas.unc.edu/depts/physics_astronomy/clemens/students/group/modelfitting/DA_models')
+        os.chdir(path)
         files = np.genfromtxt(filenames,dtype='str')
         #Create array of all logg and Teff values for computation of errors
         lowestg = float(files[0][8:11]) / 100.
@@ -102,18 +101,18 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         numt = (highestt - lowestt) / deltat + 1.
         gridt = np.linspace(lowestt,highestt,num=numt)
     if case == 1:
-        os.chdir('/srv/two/jtfuchs/Interpolated_Models/center12750_800')
+        os.chdir(path)
         files = np.genfromtxt(filenames,dtype='str')
         #Create array of all logg and Teff values for computation of errors
         lowestg = float(files[0][8:12]) / 1000.
-        deltag = (float(files[1][8:12])/1000.) - lowestg 
+        deltag = (float(files[1][8:12])/1000.) - lowestg
         highestg = float(files[-1][8:12]) / 1000.
-        numg = (highestg - lowestg ) /deltag + 1.
+        numg = round((highestg - lowestg ) /deltag + 1.) #Use round to avoid weird conversion to integer problems. Ensures this number is correct by correcting for computer representation stuff.
         gridg = np.linspace(lowestg,highestg,num = numg)
         lowestt = float(files[0][2:7])
-        deltat = float(files[numg][2:7]) - lowestt
+        deltat = float(files[numg][2:7]) - lowestt 
         highestt = float(files[-1][2:7])
-        numt = (highestt - lowestt) / deltat + 1.
+        numt = round((highestt - lowestt) / deltat + 1.)#Use round to avoid weird conversion to integer problems. Ensures this number is correct by correcting for computer representation stuff.
         gridt = np.linspace(lowestt,highestt,num=numt)
     n = 0.
 #Read in model. There are 33 lines of header information before the data starts. This first read in part of the header to get the T_eff and log_g. So reading in the file twice actually.
@@ -158,7 +157,6 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
             shortinten = inten[700:4300]
 
             print 'Starting the 1D interpolation of the model'
-#interp = interp1d(shortlambdas,shortinten,kind='cubic')
             interp = InterpolatedUnivariateSpline(shortlambdas,shortinten,k=1)
             #interp2 = InterpolatedUnivariateSpline(shortlambdas,shortinten,k=2)
 #InterpolatedUnivariateSpline seems to work as well as interp1d
@@ -185,7 +183,7 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
 #Gaussian with area normalized to 1
 #gw = 360.
         gx = np.divide(range(360),10.)
-        gauss = (1./(sig * np.sqrt(2. * np.pi))) * np.exp(-(gx-18.)**2./(2.*sig**2))
+        gauss = (1./(sig * np.sqrt(2. * np.pi))) * np.exp(-(gx-18.)**2./(2.*sig**2.))
 
 #To get an array with 361 columns and N_elements(intflux) rows,
 #we'd multiply gauss * intflux (column by row) and each row would contain the
@@ -207,7 +205,7 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
 #Sum the diagonals to get the flux for each wavelength
 # Use np.diagonal. Want each sum to move down the matrix, so 
 #setting axis1 and axis2 so that happens.
-        length = len(intflux) - 360
+        length = len(intflux) - 360.
         cflux = np.zeros(length)
         clambda = intlambda[180:len(intlambda)-180]
 
@@ -226,7 +224,6 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
 #at the corresponding wavelength of the actual spectrum
 
         print 'Starting the interpolation of the convolved flux'
-#interp2 = interp1d(clambda,cflux,kind='cubic')
         interp2 = InterpolatedUnivariateSpline(clambda,cflux,k=1)
         cflux2 = interp2(lambdarange)
         #plt.clf()
@@ -439,6 +436,7 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         paralpha[0]['step'] = 1e14
         aparams = mpfit.mpfit(fitpseudogauss,aest,functkw=afa,maxiter=3000,ftol=1e-16,parinfo=paralpha) #might want to specify xtol=1e-14 or so too
         alphafit = pseudogauss(alambdas,aparams.params)
+        acenter = aparams.params[4]
 
         #print aest
         #print filename
@@ -458,6 +456,7 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         bfa = {'x':blambdas,'y':betaval,'err':bsigmas}
         bparams = mpfit.mpfit(fitpseudogauss,best,functkw=bfa,maxiter=3000,ftol=1e-16)
         betafit = pseudogauss(blambdas,bparams.params)
+        bcenter = bparams.params[4]
         #print filename
         #print best[0] - bparams.params[0]
         #print bparams.status
@@ -475,6 +474,7 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         gfa = {'x':glambdas,'y':gamval,'err':gsigmas}
         gparams = mpfit.mpfit(fitpseudogauss,gest,functkw=gfa,maxiter=3000,ftol=1e-16)
         gamfit = pseudogauss(glambdas,gparams.params)
+        gcenter = gparams.params[4]
         #print filename
         #print gest[0] - gparams.params[0]
         #print gparams.status
@@ -485,12 +485,26 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         #plt.show()
 
         #Fit higher order lines
-        hlambdas = lambdarange[H10low:dhi+1.]
-        hval = cflux2[H10low:dhi+1.]
+        hlambdas = lambdarange[hlow:hhi+1.] #H10low:dhi+1.
+        dlambdas = lambdas[dlow:dhi+1]
+        elambdas = lambdas[elow:ehi+1]
+        H8lambdas = lambdas[H8low:H8hi+1]
+        H9lambdas = lambdas[H9low:H9hi+1]
+        H10lambdas = lambdas[H10low:H10hi+1]
+        hval = cflux2[hlow:hhi+1.]#H10low:dhi+1.
         hsigmas = np.ones(len(hval))
         hfa = {'x':hlambdas,'y':hval,'err':hsigmas}
-        hparams = mpfit.mpfit(multifitpseudogauss,hest,functkw=hfa,maxiter=3000,ftol=1e-16)
+        #Limit parameters
+        limparams = [{'limits':[0,0],'limited':[0,0]} for i in range(len(hest))] #23 total parameters
+        limparams[20]['limited'] = [1,1]
+        limparams[20]['limits'] = [3785.,3810.]
+        hparams = mpfit.mpfit(multifitpseudogauss,hest,functkw=hfa,maxiter=3000,ftol=1e-16,parinfo=limparams)
         hfit = multipseudogauss(hlambdas,hparams.params)
+        dcenter = hparams.params[4]
+        ecenter = hparams.params[8]
+        H8center = hparams.params[12]
+        H9center = hparams.params[16]
+        H10center = hparams.params[20]
         #print filename
         #plt.clf()
         #plt.plot(hlambdas,hval,'b')
@@ -501,68 +515,112 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
 
         #Normalize the lines. The first option uses the raw models to normalize to itself. The second option use the pseudogaussian fits to the models to normalize.
         #First H10
-        H10normlow = np.min(np.where(hlambdas > 3785))
-        H10normhi = np.min(np.where(hlambdas > 3815))
-        H10slope = (hfit[H10normhi] - hfit[H10normlow]) / (hlambdas[H10normhi] - hlambdas[H10normlow])
-        H10nline = H10slope * (hlambdas[H10normlow:H10normhi+1] - hlambdas[H10normlow]) + hfit[H10normlow]
-        H10nflux = cflux2[H10low:H10hi+1] / H10nline
+        #First make center of pseudo gauss fit to be at 3797.909
+        hlambdastemp = hlambdas - (H10center-3797.909)
+        #H10lambdas = H10lambdas - (H10center-3797.909)
+        #Since we have the center matched up, now set the normalization points and normalize to those
+        H10normlow = np.min(np.where(hlambdastemp > 3785.))
+        H10normhi = np.min(np.where(hlambdastemp > 3815.))
+        H10slope = (hfit[H10normhi] - hfit[H10normlow]) / (hlambdastemp[H10normhi] - hlambdastemp[H10normlow])
+        H10nline = H10slope * (hlambdastemp[H10normlow:H10normhi+1] - hlambdastemp[H10normlow]) + hfit[H10normlow]
+        #H10nflux = cflux2[H10low:H10hi+1] / H10nline
+        H10fluxtemp = cflux2[hlow:hhi+1]
+        H10nfluxtemp = H10fluxtemp[H10normlow:H10normhi+1] / H10nline
+        #Our wavelengths are now different from those in our observed spectrum since we shifted. So interpolate the normalized line and read out the wavelengths we want.
+        interp = InterpolatedUnivariateSpline(hlambdastemp[H10normlow:H10normhi+1],H10nfluxtemp,k=1)
+        H10nflux = interp(alllambda[indices[0]:indices[1]+1])
 
-        #First H9
+
+
+
+        #Now H9
+        hlambdastemp = hlambdas - (H9center- 3836.485)
         #H9slope = (cflux2[H9hi] - cflux2[H9low]) / (alllambda[H9hi] - alllambda[H9low])
         #H9nline = H9slope * (alllambda[H9low:H9hi+1.] - alllambda[H9low]) + cflux2[H9low]
         #H9nflux = cflux2[H9low:H9hi+1.] / H9nline
-        H9normlow = np.min(np.where(hlambdas > 3815))
-        H9normhi = np.min(np.where(hlambdas > 3855))
-        H9slope = (hfit[H9normhi] - hfit[H9normlow]) / (hlambdas[H9normhi] - hlambdas[H9normlow])
-        H9nline = H9slope * (hlambdas[H9normlow:H9normhi+1] - hlambdas[H9normlow]) + hfit[H9normlow]
-        H9nflux = cflux2[H9low:H9hi+1] / H9nline
+        #H9lambdas = H9lambdas - (H9center- 3836.485)
+        H9normlow = np.min(np.where(hlambdastemp > 3815.))
+        H9normhi = np.min(np.where(hlambdastemp > 3855.))
+        H9slope = (hfit[H9normhi] - hfit[H9normlow]) / (hlambdastemp[H9normhi] - hlambdastemp[H9normlow])
+        H9nline = H9slope * (hlambdastemp[H9normlow:H9normhi+1] - hlambdastemp[H9normlow]) + hfit[H9normlow]
+        #H9nflux = cflux2[H9low:H9hi+1] / H9nline
+        H9fluxtemp = cflux2[hlow:hhi+1]
+        H9nfluxtemp = H9fluxtemp[H9normlow:H9normhi+1] / H9nline
+        interp = InterpolatedUnivariateSpline(hlambdastemp[H9normlow:H9normhi+1],H9nfluxtemp,k=1)
+        H9nflux = interp(alllambda[indices[2]:indices[3]+1])
+
 
         #Then H8
+        #H8lambdas = H8lambdas - (H8center-3890.166)
+        hlambdastemp = hlambdas - (H8center-3890.166)
         #H8slope = (cflux2[H8hi] - cflux2[H8low]) / (alllambda[H8hi] - alllambda[H8low])
         #H8nline = H8slope * (alllambda[H8low:H8hi+1.] - alllambda[H8low]) + cflux2[H8low]
         #H8nflux = cflux2[H8low:H8hi+1.] / H8nline
-        H8normlow = np.min(np.where(hlambdas > 3860))
-        H8normhi = np.min(np.where(hlambdas > 3930))
-        H8slope = (hfit[H8normhi] - hfit[H8normlow]) / (hlambdas[H8normhi] - hlambdas[H8normlow])
-        H8nline = H8slope * (hlambdas[H8normlow:H8normhi+1] - hlambdas[H8normlow]) + hfit[H8normlow]
-        H8nflux = cflux2[H8low:H8hi+1] / H8nline
+        H8normlow = np.min(np.where(hlambdastemp > 3860.))
+        H8normhi = np.min(np.where(hlambdastemp > 3930.))
+        H8slope = (hfit[H8normhi] - hfit[H8normlow]) / (hlambdastemp[H8normhi] - hlambdastemp[H8normlow])
+        H8nline = H8slope * (hlambdastemp[H8normlow:H8normhi+1] - hlambdastemp[H8normlow]) + hfit[H8normlow]
+        #H8nflux = cflux2[H8low:H8hi+1] / H8nline
+        H8fluxtemp = cflux2[hlow:hhi+1]
+        H8nfluxtemp = H8fluxtemp[H8normlow:H8normhi+1] / H8nline
+        interp = InterpolatedUnivariateSpline(hlambdastemp[H8normlow:H8normhi+1],H8nfluxtemp,k=1)
+        H8nflux = interp(alllambda[indices[4]:indices[5]+1])
+
 
         #Then H epsilon
+        #elambdas = elambdas - (ecenter-3971.198)
+        hlambdastemp = hlambdas - (ecenter-3971.198)
         #eslope = (cflux2[ehi] - cflux2[elow]) / (alllambda[ehi] - alllambda[elow])
         #enline = eslope * (alllambda[elow:ehi+1.] - alllambda[elow]) + cflux2[elow]
         #enflux = cflux2[elow:ehi+1.] / enline
-        enormhi = np.min(np.where(hlambdas > 4030))
-        enormlow = np.min(np.where(hlambdas > 3930))
-        eslope = (hfit[enormhi] - hfit[enormlow]) / (hlambdas[enormhi] - hlambdas[enormlow])
-        enline = eslope * (hlambdas[enormlow:enormhi+1] - hlambdas[enormlow]) + hfit[enormlow]
-        enflux = cflux2[elow:ehi+1] / enline
+        enormhi = np.min(np.where(hlambdastemp > 4030.))
+        enormlow = np.min(np.where(hlambdastemp > 3930.))
+        eslope = (hfit[enormhi] - hfit[enormlow]) / (hlambdastemp[enormhi] - hlambdastemp[enormlow])
+        enline = eslope * (hlambdastemp[enormlow:enormhi+1] - hlambdastemp[enormlow]) + hfit[enormlow]
+        #enflux = cflux2[elow:ehi+1] / enline
+        efluxtemp = cflux2[hlow:hhi+1]
+        enfluxtemp = efluxtemp[enormlow:enormhi+1] / enline
+        interp = InterpolatedUnivariateSpline(hlambdastemp[enormlow:enormhi+1],enfluxtemp,k=1)
+        enflux = interp(alllambda[indices[6]:indices[7]+1])
+
 
         #Then H delta
+        #dlambdas = dlambdas - (dcenter-4102.892)
+        hlambdastemp = hlambdas - (dcenter-4102.892)
         #dslope = (cflux2[dhi] - cflux2[dlow]) / (alllambda[dhi] - alllambda[dlow])
         #dnline = dslope * (alllambda[dlow:dhi+1.] - alllambda[dlow]) + cflux2[dlow]
         #dnflux = cflux2[dlow:dhi+1.] / dnline
-        dnormhi = np.min(np.where(hlambdas > 4191))
-        dnormlow = np.min(np.where(hlambdas > 4040))
-        dslope = (hfit[dnormhi] - hfit[dnormlow]) / (hlambdas[dnormhi] - hlambdas[dnormlow])
-        dnline = dslope * (hlambdas[dnormlow:dnormhi+1] - hlambdas[dnormlow]) + hfit[dnormlow]
-        dnflux = cflux2[dlow:dhi+1] / dnline
-        
+        dnormhi = np.min(np.where(hlambdastemp > 4191.))
+        dnormlow = np.min(np.where(hlambdastemp > 4040.))
+        dslope = (hfit[dnormhi] - hfit[dnormlow]) / (hlambdastemp[dnormhi] - hlambdastemp[dnormlow])
+        dnline = dslope * (hlambdastemp[dnormlow:dnormhi+1] - hlambdastemp[dnormlow]) + hfit[dnormlow]
+        dfluxtemp = cflux2[hlow:hhi+1]
+        #dnflux = cflux2[dlow:dhi+1] / dnline
+        dnfluxtemp = dfluxtemp[dnormlow:dnormhi+1] / dnline
+        interp = InterpolatedUnivariateSpline(hlambdastemp[dnormlow:dnormhi+1],dnfluxtemp,k=1)
+        dnflux = interp(alllambda[indices[8]:indices[9]+1])
 
         #For H alpha and beta we fit to larger regions than we want to compare. So need to normalize
         #using our narrower region.
         
         #Now H gamma
+        glambdas = glambdas - (gcenter-4341.692)
         #gslope = (cflux2[ghi] - cflux2[glow]) / (alllambda[ghi] - alllambda[glow])
         #gnline = gslope * (alllambda[glow:ghi+1.] - alllambda[glow]) + cflux2[glow]
         #gnflux = cflux2[glow:ghi+1.] / gnline
         gnormlow = np.min(np.where(glambdas > 4220.))
         gnormhi = np.min(np.where(glambdas > 4490.))
         gslope = (gamfit[gnormhi] - gamfit[gnormlow]) / (glambdas[gnormhi] - glambdas[gnormlow])
+        gvalnew = gamval[gnormlow:gnormhi+1]
         glambdasnew = glambdas[gnormlow:gnormhi+1]
         gnline = gslope * (glambdasnew - glambdas[gnormlow]) + gamfit[gnormlow]
-        gnflux = cflux2[glow:ghi+1.] / gnline
+        gnfluxtemp = gvalnew / gnline
+        interp = InterpolatedUnivariateSpline(glambdasnew,gnfluxtemp,k=1)
+        gnflux = interp(alllambda[indices[10]:indices[11]+1])
+
     
         #Now H beta
+        blambdas = blambdas - (bcenter-4862.710)
         #bslope = (cflux2[bhi] - cflux2[blow]) / (alllambda[bhi] - alllambda[blow])
         #bnline = bslope * (alllambda[blow:bhi+1.] - alllambda[blow]) + cflux2[blow]
         #bnflux = cflux2[blow:bhi+1.] / bnline
@@ -570,23 +628,29 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         bnormhi = np.min(np.where(blambdas > 5010.))
         bslope = (betafit[bnormhi] - betafit[bnormlow]) / (blambdas[bnormhi] - blambdas[bnormlow])
         blambdasnew = blambdas[bnormlow:bnormhi+1]
+        bvalnew = betaval[bnormlow:bnormhi+1.]
         bnline = bslope * (blambdasnew - blambdas[bnormlow]) + betafit[bnormlow]
-        bnflux = cflux2[blow:bhi+1.] / bnline
+        bnfluxtemp = bvalnew / bnline
+        interp = InterpolatedUnivariateSpline(blambdasnew,bnfluxtemp,k=1)
+        bnflux = interp(alllambda[indices[12]:indices[13]+1])
+
 
         #Now H alpha
+        alambdas = alambdas - (acenter- 6564.60)
         #aslope = (cflux2[ahi] - cflux2[alow]) / (alllambda[ahi] - alllambda[alow])
         #anline = aslope * (alllambda[alow:ahi+1.] - alllambda[alow]) + cflux2[alow]
         #anflux = cflux2[alow:ahi+1.] / anline
+        #alambdas includes extra fitting, so need to select inner points for normalization
         anormlow = np.min(np.where(alambdas > 6413.))
         anormhi = np.min(np.where(alambdas > 6713.))
         aslope = (alphafit[anormhi] - alphafit[anormlow]) / (alambdas[anormhi] - alambdas[anormlow])
         alambdasnew = alambdas[anormlow:anormhi+1]
+        avalnew = alphaval[anormlow:anormhi+1]
         anline = aslope * (alambdasnew - alambdas[anormlow]) + alphafit[anormlow]
-        anflux = cflux2[alow:ahi+1.] / anline
+        anfluxtemp = avalnew / anline
+        interp = InterpolatedUnivariateSpline(alambdasnew,anfluxtemp,k=1)
+        anflux = interp(alllambda[indices[14]:+indices[15]+1])
         
-        #plt.clf()
-        #plt.plot(glambdasnew,gnflux)
-        #plt.show()
 
         #Concatenate into one normalized array. If you want to exclude some regions (e.g. H10) this is where you should do that.
         ###Through H8
@@ -595,7 +659,7 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         #ncflux = np.concatenate((H9nflux,H8nflux,enflux,dnflux,gnflux,bnflux))
         #ncflux = np.concatenate((H9nflux,H8nflux,enflux,dnflux,gnflux,bnflux,anflux))
         ncflux = np.concatenate((H10nflux,H9nflux,H8nflux,enflux,dnflux,gnflux,bnflux,anflux))
-        
+        #print len(H10nflux),len(H9nflux),len(H8nflux),len(enflux),len(dnflux),len(gnflux),len(bnflux),len(anflux)
         #plt.clf()
         #plt.plot(alllambda,ncflux,'b^')
         #plt.show()
@@ -621,19 +685,10 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         obs8sig = allsigma[indices[4]:indices[5]+1]
         obs9sig = allsigma[indices[2]:indices[3]+1]
         obs10sig = allsigma[indices[0]:indices[1]+1]
-        '''
-        obsalphasig = allsigma[alow:ahi+1]
-        obsbetasig = allsigma[blow:bhi+1]
-        obsgammasig = allsigma[glow:ghi+1]
-        obsdeltasig = allsigma[dlow:dhi+1]
-        obsepsilonsig = allsigma[elow:ehi+1]
-        obs8sig = allsigma[H8low:H8hi+1]
-        obs9sig = allsigma[H9low:H9hi+1]
-        obs10sig = allsigma[H10low:H10hi+1]
-        '''
+ 
         #Save interpolated and normalized model
-        #intmodelname = 'da' + str(teff) + '_' + str(logg) + '_norm.txt'
-        #np.savetxt(intmodelname,np.transpose([alllambda,ncflux]))
+        intmodelname = 'da' + str(teff) + '_' + str(logg) + '_norm.txt'
+        np.savetxt(intmodelname,np.transpose([alllambda,ncflux]))
 
         #Calculate residuals and chi-square
         if n == 0:
@@ -727,23 +782,23 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
     #Now save the best convolved model and delta chi squared surface
     newmodel = 'model_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '.txt' #NEED TO CHECK THIS TO MAKE SURE IT WORKS GENERALLY
     np.savetxt(newmodel,np.transpose([alllambda,bestmodel]))
-    deltaname = 'deltachi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '.txt'
-    np.savetxt(deltaname,deltachi)
-    alphaname = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_alpha.txt'
+    chiname = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_' + now[5:10] + '.txt'
+    np.savetxt(chiname,chis)
+    alphaname = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_alpha_' + now[5:10] + '.txt'
     np.savetxt(alphaname,chisalpha)
-    betaname = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_beta.txt'
+    betaname = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_beta_' + now[5:10] + '.txt'
     np.savetxt(betaname,chisbeta)
-    gammaname = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_gamma.txt'
+    gammaname = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_gamma_' + now[5:10] + '.txt'
     np.savetxt(gammaname,chisgamma)
-    deltaname = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_delta.txt'
+    deltaname = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_delta_' + now[5:10] + '.txt'
     np.savetxt(deltaname,chisdelta)
-    epsilonname = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_epsilon.txt'
+    epsilonname = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_epsilon_' + now[5:10] + '.txt'
     np.savetxt(epsilonname,chisepsilon)
-    H8name = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_H8.txt'
+    H8name = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_H8_' + now[5:10] + '.txt'
     np.savetxt(H8name,chis8)
-    H9name = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_H9.txt'
+    H9name = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_H9_' + now[5:10] + '.txt'
     np.savetxt(H9name,chis9)
-    H10name = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_H10.txt'
+    H10name = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_H10_' + now[5:10] + '.txt'
     np.savetxt(H10name,chis10)
 
 
@@ -764,8 +819,4 @@ def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
     plt.legend()
     #plt.show()
     return ncflux,int(bestT),int(bestg)
-
-
-
-
 

@@ -3,19 +3,25 @@ Written March 2015
 @author: Josh T Fuchs
 """
 
-##############################
-# This program sends models and interpolation points to
-# intmodels.py for model interpolation
-
 import numpy as np
 import matplotlib.pyplot as plt
 import os
 import sys
 from intmodels import models #This interpolates the models to a small grid
-from intspec import intmodel #This compares models to the spectrum
 
+def makefinegrid(bestT,bestg):
 
-def makefinegrid(blambdas,bnline,bsigma,lambdaindex,bestT,bestg,lambdas,zzcetiblue,zzcetired,FWHM,indices):
+    '''
+    :DESCRIPTION: Takes the best Teff and log(g) from the fitting to the coarse grid. Sets up ranges and values to interpolate the grid to smaller Teff and log(g) spacing. Calls intmodels.py that does the actual interpolation.
+    
+    :INPUTS: 
+    
+       bestT: integer, best-fitting Teff from the coarse grid
+    
+       bestg: integer, best-fitting log(g) from the coarse grid. In format: log(g) = 8.0 as bestg = 800
+ 
+    '''
+
     firstt = bestT#12500
     firstg = bestg#800
 
@@ -40,7 +46,7 @@ def makefinegrid(blambdas,bnline,bsigma,lambdaindex,bestT,bestg,lambdas,zzcetibl
         filenames = ['da' + str(i) + '_' + str(testg[0]) + '.dk','da' + str(i) + '_' + str(testg[1]) + '.dk','da' + str(i) + '_' + str(testg[2]) + '.dk','da' + str(i) + '_' + str(testg[3]) + '.dk','da' + str(i) + '_' + str(testg[4]) + '.dk']
         grid = gridg
         case = 0 # Use 0 for log(g) interp. and 1 for Teff interp. Just a binary switch.
-        #models(filenames,grid,case)
+        models(filenames,grid,case)
         print 'Made it back!'
 
 
@@ -67,15 +73,25 @@ def makefinegrid(blambdas,bnline,bsigma,lambdaindex,bestT,bestg,lambdas,zzcetibl
     
         grid = gridt
         case = 1 # Use 0 for log(g) interp. and 1 for Teff interp. Just a binary switch.
-        #models(filenames,grid,case)
+        models(filenames,grid,case)
         print 'Made it back!'
 
-
     print 'Done with all the log(g)s.'
+    #Save file names to interpolated_names.txt
+    
+    print 'Saving file names to interpolated_names.txt.'
+    lowt = firstt - 250
+    lowg = firstg*10 - 250
+    ranget = 5*np.arange(101)#steps of 5 in Teff
+    rangeg = 5*np.arange(101)#steps of 0.005 in log(g)
+    f = open('interpolated_names.txt','a')
+    for y in ranget:
+        teffwrite = lowt + y
+        for x in rangeg:
+            loggwrite = lowg + x
+            file =  'da' + str(teffwrite) + '_' + str(loggwrite) + '.jf'
+            f.write(file + '\n')
+    f.close()
+    
+    print 'File saved.'
     print 'The finer grid is complete!'
-    #sys.exit()
-#Now we want to compare this finer grid to our spectrum.
-    case = 1 #We'll be comparing our new grid to the spectrum.
-    filenames = 'interpolated_names.txt'
-
-    ncflux,bestT,bestg = intmodel(blambdas,bnline,bsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices)
