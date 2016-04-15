@@ -51,7 +51,7 @@ def multifitpseudogauss(p,fjac=None,x=None, y=None, err=None):
 #Case = 0 means using D. Koester's raw models
 #Case = 1 means using the interpolation of those models to a smaller grid.
 
-def intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path):
+def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path):
 
     '''
     :DESCRIPTION: Interpolates and convolves DA models to match observed spectra. Fits pseudogaussians to DA models and compares to normalized, observed spectra. Save chi-square values.

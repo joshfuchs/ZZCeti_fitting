@@ -27,7 +27,7 @@ import matplotlib.pyplot as plt
 import pyfits as pf # Infierno doesn't support astropy for some reason so using pyfits
 #import astropy.io.fits as pf
 import mpfit
-from intspec import intmodel
+from intspec import intspecs
 from finegrid import makefinegrid
 import sys
 import os
@@ -583,7 +583,7 @@ case = 0 #We'll be interpolating Koester's raw models
 filenames = 'modelnames.txt'
 path = '/afs/cas.unc.edu/depts/physics_astronomy/clemens/students/group/modelfitting/DA_models'
 #np.savetxt('norm_WD0122.dat',np.transpose([blambdas,bnline]))
-#ncflux,bestT,bestg = intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path)
+#ncflux,bestT,bestg = intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path)
 #print bestT,bestg
 bestT, bestg = 12750, 825
 #sys.exit()
@@ -601,7 +601,7 @@ sys.exit()
 case = 1 #We'll be comparing our new grid to the spectrum.
 filenames = 'interpolated_names.txt'
 path = '/srv/two/jtfuchs/Interpolated_Models/center' + str(bestT) + '_' + str(bestg)
-ncflux,bestT,bestg = intmodel(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path)
+ncflux,bestT,bestg = intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path)
 
 
 
