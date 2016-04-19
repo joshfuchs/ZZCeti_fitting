@@ -64,9 +64,10 @@ def multifitpseudogauss(p,fjac=None,x=None, y=None, err=None):
 #zzcetiblue = 'wnb.WD0122p0030_930_blue_fluxGD50.fits'
 #zzcetired = 'wnb.WD0122p0030_930_red_fluxGD50.fits'
 #FWHM = 4.4
-zzcetiblue = 'wtfb.wd1425-811_930_blue_flux.ms.fits'
-zzcetired = 'wtfb.wd1425-811_930_red_flux.ms.fits' 
-FWHMpix = 6.1 #The FWHM in pixels
+zzcetiblue = 'wtfb.WD1422p095_930_blue_flux.ms.fits'
+zzcetired = 'wtfb.WD1422p095_930_red_flux.ms.fits' 
+FWHMpix = 5.5 #The FWHM in pixels
+
 
 #Read in the blue spectrum
 datalistblue = pf.open(zzcetiblue)
@@ -100,7 +101,7 @@ FWHM = FWHMpix * deltawavblue #FWHM in Angstroms
 #Concatenate both into two arrays
 lambdas = np.concatenate((lambdasblue,lambdasred))
 dataval = np.concatenate((datavalblue,datavalred))
-sigmaval = 2.e-17 * np.ones(len(dataval))#np.concatenate((sigmavalblue,sigmavalred))
+sigmaval = np.concatenate((sigmavalblue,sigmavalred))#2.e-17 * np.ones(len(dataval))
 '''
 #Read in text file
 lambdas, dataval = np.genfromtxt('rawmodel.dat',unpack=True) #Files from Bart
@@ -262,7 +263,7 @@ asigmas = sigmaval[afitlow:afithi+1]
 alphaval = dataval[afitlow:afithi+1]
 
 afa = {'x':alambdas, 'y':alphaval, 'err':asigmas}
-aparams = mpfit.mpfit(fitpseudogauss,aest,functkw=afa,maxiter=5000,ftol=1e-16,parinfo=paralpha)
+aparams = mpfit.mpfit(fitpseudogauss,aest,functkw=afa,maxiter=3000,ftol=1e-16,parinfo=paralpha)
 
 acenter = aparams.params[4]
 alphafit = pseudogauss(alambdas,aparams.params)
@@ -283,7 +284,7 @@ bsigmas = sigmaval[bfitlow:bfithi+1]
 betaval = dataval[bfitlow:bfithi+1]
 
 bfa = {'x':blambdas, 'y':betaval, 'err':bsigmas}
-bparams = mpfit.mpfit(fitpseudogauss,best,functkw=bfa,maxiter=5000,ftol=1e-16)
+bparams = mpfit.mpfit(fitpseudogauss,best,functkw=bfa,maxiter=3000,ftol=1e-16)
 
 bcenter = bparams.params[4]
 betafit = pseudogauss(blambdas,bparams.params)
@@ -301,7 +302,7 @@ glambdas = lambdas[gfitlow:gfithi+1]
 gsigmas = sigmaval[gfitlow:gfithi+1]
 gamval = dataval[gfitlow:gfithi+1]
 gfa = {'x':glambdas, 'y':gamval, 'err':gsigmas}
-gparams = mpfit.mpfit(fitpseudogauss,gest,functkw=gfa,maxiter=5000,ftol=1e-16)
+gparams = mpfit.mpfit(fitpseudogauss,gest,functkw=gfa,maxiter=3000,ftol=1e-16)
 
 gcenter = gparams.params[4]
 gamfit = pseudogauss(glambdas,gparams.params)
@@ -329,7 +330,7 @@ H10lambdas = lambdas[H10low:H10hi+1]
 hsigmas = sigmaval[hlow:hhi+1]
 hval = dataval[hlow:hhi+1]
 hfa = {'x':hlambdas, 'y':hval, 'err':hsigmas}
-hparams = mpfit.mpfit(multifitpseudogauss,hest,functkw=hfa,maxiter=5000,ftol=1e-12,parinfo=parhigh) #Might want to check this ftol
+hparams = mpfit.mpfit(multifitpseudogauss,hest,functkw=hfa,maxiter=3000,ftol=1e-12,parinfo=parhigh) #Might want to check this ftol
 
 hfit = multipseudogauss(hlambdas,hparams.params)
 dcenter = hparams.params[4]
@@ -582,17 +583,17 @@ print "Starting intspec.py now "
 case = 0 #We'll be interpolating Koester's raw models
 filenames = 'modelnames.txt'
 path = '/afs/cas.unc.edu/depts/physics_astronomy/clemens/students/group/modelfitting/DA_models'
-#np.savetxt('norm_WD0122.dat',np.transpose([blambdas,bnline]))
+#np.savetxt('norm_WD1425-811.dat',np.transpose([alllambda,allnline]))
 #ncflux,bestT,bestg = intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path)
 #print bestT,bestg
-bestT, bestg = 12750, 825
+bestT, bestg = 12250, 825
 #sys.exit()
 
 #######
 # Now we want to compute the finer grid
 #######
-makefinegrid(bestT,bestg)
-sys.exit()
+#makefinegrid(bestT,bestg)
+#sys.exit()
 ###################
 # Compute the Chi-square for
 # Each of those

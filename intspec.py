@@ -93,12 +93,12 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         lowestg = float(files[0][8:11]) / 100.
         deltag = (float(files[1][8:11])/100.) - lowestg 
         highestg = float(files[-1][8:11]) / 100.
-        numg = (highestg - lowestg ) /deltag + 1.
+        numg = round((highestg - lowestg ) /deltag + 1.)
         gridg = np.linspace(lowestg,highestg,num = numg)
         lowestt = float(files[0][2:7])
         deltat = float(files[numg][2:7]) - lowestt
         highestt = float(files[-1][2:7])
-        numt = (highestt - lowestt) / deltat + 1.
+        numt = round((highestt - lowestt) / deltat + 1.)
         gridt = np.linspace(lowestt,highestt,num=numt)
     if case == 1:
         os.chdir(path)
@@ -434,7 +434,7 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         afa = {'x':alambdas, 'y':alphaval, 'err':asigmas}
         paralpha = [{'step':0.} for i in range(7)]
         paralpha[0]['step'] = 1e14
-        aparams = mpfit.mpfit(fitpseudogauss,aest,functkw=afa,maxiter=3000,ftol=1e-16,parinfo=paralpha) #might want to specify xtol=1e-14 or so too
+        aparams = mpfit.mpfit(fitpseudogauss,aest,functkw=afa,maxiter=3000,ftol=1e-16,parinfo=paralpha,quiet=True) #might want to specify xtol=1e-14 or so too
         alphafit = pseudogauss(alambdas,aparams.params)
         acenter = aparams.params[4]
 
@@ -454,7 +454,7 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         betaval = cflux2[bfitlow:bfithi+1.]
         bsigmas = np.ones(len(betaval))
         bfa = {'x':blambdas,'y':betaval,'err':bsigmas}
-        bparams = mpfit.mpfit(fitpseudogauss,best,functkw=bfa,maxiter=3000,ftol=1e-16)
+        bparams = mpfit.mpfit(fitpseudogauss,best,functkw=bfa,maxiter=3000,ftol=1e-16,quiet=True)
         betafit = pseudogauss(blambdas,bparams.params)
         bcenter = bparams.params[4]
         #print filename
@@ -472,7 +472,7 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         gamval = cflux2[gfitlow:gfithi+1.]
         gsigmas = np.ones(len(gamval))
         gfa = {'x':glambdas,'y':gamval,'err':gsigmas}
-        gparams = mpfit.mpfit(fitpseudogauss,gest,functkw=gfa,maxiter=3000,ftol=1e-16)
+        gparams = mpfit.mpfit(fitpseudogauss,gest,functkw=gfa,maxiter=3000,ftol=1e-16,quiet=True)
         gamfit = pseudogauss(glambdas,gparams.params)
         gcenter = gparams.params[4]
         #print filename
@@ -498,7 +498,7 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         limparams = [{'limits':[0,0],'limited':[0,0]} for i in range(len(hest))] #23 total parameters
         limparams[20]['limited'] = [1,1]
         limparams[20]['limits'] = [3785.,3810.]
-        hparams = mpfit.mpfit(multifitpseudogauss,hest,functkw=hfa,maxiter=3000,ftol=1e-16,parinfo=limparams)
+        hparams = mpfit.mpfit(multifitpseudogauss,hest,functkw=hfa,maxiter=3000,ftol=1e-16,parinfo=limparams,quiet=True)
         hfit = multipseudogauss(hlambdas,hparams.params)
         dcenter = hparams.params[4]
         ecenter = hparams.params[8]
@@ -687,8 +687,8 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         obs10sig = allsigma[indices[0]:indices[1]+1]
  
         #Save interpolated and normalized model
-        intmodelname = 'da' + str(teff) + '_' + str(logg) + '_norm.txt'
-        np.savetxt(intmodelname,np.transpose([alllambda,ncflux]))
+        #intmodelname = 'da' + str(teff) + '_' + str(logg) + zzcetiblue[5:zzcetiblue.find('_930_')] + '_norm.txt'
+        #np.savetxt(intmodelname,np.transpose([alllambda,ncflux]))
 
         #Calculate residuals and chi-square
         if n == 0:
@@ -710,11 +710,11 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         allg[n] = logg
         allt[n] = teff
         if case == 0:
-            ng = ((logg/100.) - lowestg) / deltag
-            nt = (teff - lowestt) / deltat
+            ng = round(((logg/100.) - lowestg) / deltag) #round to fix float/int issue
+            nt = round((teff - lowestt) / deltat)#round to fix float/int issu
         if case == 1:
-            ng = ((logg/1000.) - lowestg) / deltag
-            nt = (teff - lowestt) / deltat
+            ng = round(((logg/1000.) - lowestg) / deltag)#round to fix float/int issu
+            nt = round((teff - lowestt) / deltat)#round to fix float/int issu
         chis[ng][nt] = chisq[n] #Save values in a matrix
         chisalpha[ng][nt] = np.sum(((obsalpha - anflux) / obsalphasig)**2.,dtype='d')
         chisbeta[ng][nt] = np.sum(((obsbeta -bnflux) / obsbetasig)**2.,dtype='d')
@@ -724,7 +724,11 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         chis8[ng][nt] = np.sum(((obs8 - H8nflux) / obs8sig)**2.,dtype='d')
         chis9[ng][nt] = np.sum(((obs9 - H9nflux) / obs9sig)**2.,dtype='d')
         chis10[ng][nt] = np.sum(((obs10 - H10nflux) / obs10sig)**2.,dtype='d')
+        print ng,nt
+        print int(ng),int(nt)
+        print chis[ng][nt],chisalpha[ng][nt],chisbeta[ng][nt],chisgamma[ng][nt],chisdelta[ng][nt],chisepsilon[ng][nt],chis8[ng][nt],chis9[ng][nt],chis10[ng][nt]
         print 'Chi-square is ',chisq[n]
+        print chis
         if n == 0:
             bestchi = chisq[n]
 
@@ -745,30 +749,30 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
 
     #First subtract the best chi-squared from all chi-squared values
     deltachi = np.subtract(chis,bestchi)
-    plt.clf()
-    v = np.array([1.0])
-    plt.figure()
-    plt.contour(gridt,gridg,deltachi,v)
-    CS = plt.contour(gridt,gridg,deltachi,v)
-    plt.clabel(CS)#,inline=1,fontsize=10)
-    p = CS.collections[0].get_paths()[0]
-    v = p.vertices #Get points for delta chi-square =1 surface
-    ranget = np.array(v[:,0])
-    rangeg = np.array(v[:,1])
-    print 'Min and Max Teff are ',np.amin(ranget),' and ',np.amax(ranget)
-    print 'Min and Max log(g) are ',np.amin(rangeg),' and ',np.amax(rangeg)
-    uppert = np.amax(ranget)
-    lowert = np.amin(ranget)
-    upperg = np.amax(rangeg)
-    lowerg = np.amin(rangeg)
-    upperterr = uppert - bestT
-    lowerterr = bestT - lowert
-    Terr = (upperterr + lowerterr) / 2.
-    uppergerr = upperg - (bestg/1000.)
-    lowergerr = (bestg/1000.) - lowerg
-    gerr = (uppergerr + lowergerr) / 2.
+    #plt.clf()
+    #v = np.array([1.0])
+    #plt.figure()
+    #plt.contour(gridt,gridg,deltachi,v)
+    #CS = plt.contour(gridt,gridg,deltachi,v)
+    #plt.clabel(CS)#,inline=1,fontsize=10)
+    #p = CS.collections[0].get_paths()[0]
+    #v = p.vertices #Get points for delta chi-square =1 surface
+    #ranget = np.array(v[:,0])
+    #rangeg = np.array(v[:,1])
+    #print 'Min and Max Teff are ',np.amin(ranget),' and ',np.amax(ranget)
+    #print 'Min and Max log(g) are ',np.amin(rangeg),' and ',np.amax(rangeg)
+    #uppert = np.amax(ranget)
+    #lowert = np.amin(ranget)
+    #upperg = np.amax(rangeg)
+    #lowerg = np.amin(rangeg)
+    upperterr = -999.#uppert - bestT
+    lowerterr = -999.#bestT - lowert
+    Terr = -9999.#(upperterr + lowerterr) / 2.
+    uppergerr = -999.#upperg - (bestg/1000.)
+    lowergerr = -999.#(bestg/1000.) - lowerg
+    gerr = -9999.#(uppergerr + lowergerr) / 2.
     #plt.show()
-
+    
     #Save information on best fitting model and the convolved model itself
     f = open('fitting_solutions.txt','a')
     now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M")
@@ -780,27 +784,27 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
     f.write(info + '\n')
     f.close()
     #Now save the best convolved model and delta chi squared surface
-    newmodel = 'model_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '.txt' #NEED TO CHECK THIS TO MAKE SURE IT WORKS GENERALLY
+    newmodel = 'model_' + zzcetiblue[5:zzcetiblue.find('_930_')] + '.txt' #NEED TO CHECK THIS TO MAKE SURE IT WORKS GENERALLY
     np.savetxt(newmodel,np.transpose([alllambda,bestmodel]))
-    chiname = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_' + now[5:10] + '.txt'
+    chiname = 'chi_' + zzcetiblue[5:zzcetiblue.find('_930_')] + '_' + now[5:10] + '.txt'
     np.savetxt(chiname,chis)
-    alphaname = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_alpha_' + now[5:10] + '.txt'
+    alphaname = 'chi_' + zzcetiblue[5:zzcetiblue.find('_930_')] + '_alpha_' + now[5:10] + '.txt'
     np.savetxt(alphaname,chisalpha)
-    betaname = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_beta_' + now[5:10] + '.txt'
+    betaname = 'chi_' + zzcetiblue[5:zzcetiblue.find('_930_')] + '_beta_' + now[5:10] + '.txt'
     np.savetxt(betaname,chisbeta)
-    gammaname = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_gamma_' + now[5:10] + '.txt'
+    gammaname = 'chi_' + zzcetiblue[5:zzcetiblue.find('_930_')] + '_gamma_' + now[5:10] + '.txt'
     np.savetxt(gammaname,chisgamma)
-    deltaname = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_delta_' + now[5:10] + '.txt'
+    deltaname = 'chi_' + zzcetiblue[5:zzcetiblue.find('_930_')] + '_delta_' + now[5:10] + '.txt'
     np.savetxt(deltaname,chisdelta)
-    epsilonname = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_epsilon_' + now[5:10] + '.txt'
+    epsilonname = 'chi_' + zzcetiblue[5:zzcetiblue.find('_930_')] + '_epsilon_' + now[5:10] + '.txt'
     np.savetxt(epsilonname,chisepsilon)
-    H8name = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_H8_' + now[5:10] + '.txt'
+    H8name = 'chi_' + zzcetiblue[5:zzcetiblue.find('_930_')] + '_H8_' + now[5:10] + '.txt'
     np.savetxt(H8name,chis8)
-    H9name = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_H9_' + now[5:10] + '.txt'
+    H9name = 'chi_' + zzcetiblue[5:zzcetiblue.find('_930_')] + '_H9_' + now[5:10] + '.txt'
     np.savetxt(H9name,chis9)
-    H10name = 'chi_' + zzcetiblue[4:zzcetiblue.find('_930_')] + '_H10_' + now[5:10] + '.txt'
+    H10name = 'chi_' + zzcetiblue[5:zzcetiblue.find('_930_')] + '_H10_' + now[5:10] + '.txt'
     np.savetxt(H10name,chis10)
-
+    
 
     print ''
     print 'Best chi-squared is ', bestchi
@@ -813,10 +817,10 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         print 'Error on T_eff is + ',upperterr,' and - ',lowerterr
         print 'Error on log_g is + ',uppergerr,' and - ',lowergerr
     print 'Done running intspec.py'
-    plt.clf()
-    plt.plot(alllambda,allnline,'bs',label='Normalized data')
-    plt.plot(alllambda,bestmodel,'r^',label='Model')
-    plt.legend()
+    #plt.clf()
+    #plt.plot(alllambda,allnline,'bs',label='Normalized data')
+    #plt.plot(alllambda,bestmodel,'r^',label='Model')
+    #plt.legend()
     #plt.show()
     return ncflux,int(bestT),int(bestg)
 
