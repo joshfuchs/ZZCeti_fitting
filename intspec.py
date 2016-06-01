@@ -867,8 +867,8 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         obs10sig = allsigma[indices[0]:indices[1]+1]
  
         #Save interpolated and normalized model
-        intmodelname = 'da' + str(teff) + '_' + str(logg) + zzcetiblue[5:zzcetiblue.find('_930_')] + '_' + str(np.round(FWHM,decimals=2)) + '_norm.txt'
-        np.savetxt(intmodelname,np.transpose([alllambda,ncflux]))
+        #intmodelname = 'da' + str(teff) + '_' + str(logg) + zzcetiblue[5:zzcetiblue.find('_930_')] + '_' + str(np.round(FWHM,decimals=2)) + '_norm.txt'
+        #np.savetxt(intmodelname,np.transpose([alllambda,ncflux]))
 
         #Calculate residuals and chi-square
         if n == 0:

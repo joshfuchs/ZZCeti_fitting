@@ -32,7 +32,10 @@ from finegrid import makefinegrid
 import sys
 import os
 
-#Define pseudogauss to fit one spectral line
+
+# ===========================================================================
+
+#Define pseudogauss to fit one spectral line using parabola for continuum
 def pseudogauss(x,p):
     #The model function with parameters p
     return p[0]*1. + p[1]*x + p[2]*x**2. + p[3]*np.exp(-(np.abs(x-p[4])/(np.sqrt(2.)*p[5]))**p[6])
@@ -45,7 +48,8 @@ def fitpseudogauss(p,fjac=None,x=None, y=None, err=None):
     status = 0
     return([status,(y-model)/err])
 
-###############
+# ===========================================================================
+
 #Pseudogaussian plus cubic for continuum
 def pseudogausscubic(x,p):
     #The model function with parameters p
@@ -59,9 +63,8 @@ def fitpseudogausscubic(p,fjac=None,x=None, y=None, err=None):
     status = 0
     return([status,(y-model)/err])
 
+# ===========================================================================
 
-##############
-#############
 #Pseudogaussian plus cubic through h11
 
 def gauss11cubic(x,p):
@@ -75,8 +78,8 @@ def fitgauss11cubic(p,fjac=None,x=None, y=None, err=None):
     status = 0
     return([status,(y-model)/err])
 
-######################
 
+# ===========================================================================
 
 #Define a function that fits higher order lines simultaneously (delta and higher))
 def multipseudogauss(x,p):
@@ -92,21 +95,46 @@ def multifitpseudogauss(p,fjac=None,x=None, y=None, err=None):
     status = 0
     return([status,(y-model)/err])
 
+# ===========================================================================
+
+def DispCalc(Pixels, alpha, theta, fr, fd, fl, zPnt):
+    # This is the Grating Equation used to calculate the wavelenght of a pixel
+    # based on the fitted parameters and angle set up.
+    # Inputs: 
+    # Pixels= Vector of Pixel Numbers
+    # alpha=  of Grating Angle
+    # aheta=  Camera Angle
+    # fr= fringe density of grating
+    # fd= Camera Angle Correction Factor
+    # zPnt= Zero point pixel 
+    Wavelengths= [] # Vector to store calculated wavelengths 
+    for pix in Pixels:    
+        beta = np.arctan( (pix-zPnt)*15./fl ) + (fd*theta*np.pi/180.) - (alpha*np.pi/180.) 
+        wave = (10**6.)*( np.sin(beta) + np.sin(alpha*np.pi/180.) )/fr
+        Wavelengths.append(wave)
+    return Wavelengths
+
+# ===========================================================================
+
+
 #Now we need to read in actual spectrum. This is for Goodman spectra.
 #Eventually make this a command line parameters
-#zzcetiblue = 'wnb.WD0122p0030_930_blue_fluxGD50.fits'
-#zzcetired = 'wnb.WD0122p0030_930_red_fluxGD50.fits'
+#zzcetiblue = 'wtnb.0526.WD1422p095_930_blue.ms.fits'
+#zzcetired = 'wtnb.0532.WD1422p095_930_red.ms.fits'
 #FWHM = 4.4 #Can read this from header using keyword SPECFWHM
 zzcetiblue = 'wtfb.wd1425-811_930_blue_flux.ms.fits'
 zzcetired = 'wtfb.wd1425-811_930_red_flux.ms.fits'
-FWHMpix = 6.4 #The FWHM in pixels
+#FWHMpix = 5.8 #The FWHM in pixels
 
 
 #Read in the blue spectrum
 datalistblue = pf.open(zzcetiblue)
 datavalblue = datalistblue[0].data[0,0,:] #Reads in the object spectrum,data[0,0,:] is optimally subtracted, data[1,0,:] is raw extraction,  data[2,0,:] is sky, data[3,0,:] is sigma spectrum
 sigmavalblue = datalistblue[0].data[3,0,:] #Sigma spectrum
-#FWHMpix = datalistblue[0].header['specfwhm']
+FWHMpix = datalistblue[0].header['specfwhm']
+
+'''
+#Linearized Wavelengths
 wav0blue = datalistblue[0].header['crval1']
 deltawavblue = datalistblue[0].header['cd1_1']
 lambdasblue = np.ones(len(datavalblue))
@@ -115,11 +143,29 @@ ivalblue = np.arange(1,len(datavalblue))
 
 for i in ivalblue:
     lambdasblue[i] = lambdasblue[i-1] + deltawavblue
+'''
+#Grating equation blue wavelengths
+alphablue = float(datalistblue[0].header['GRT_TARG'])
+thetablue = float(datalistblue[0].header['CAM_TARG'])
+frblue = float(datalistblue[0].header['LINDEN'])
+fdblue = float(datalistblue[0].header['CAMFUD'])
+flblue = float(datalistblue[0].header['FOCLEN'])
+zPntblue = float(datalistblue[0].header['ZPOINT'])
+
+trim_sec_blue= datalistblue[0].header["CCDSEC"]
+trim_offset_blue= float( trim_sec_blue[1:len(trim_sec_blue)-1].split(':')[0] )-1
+biningblue= float( datalistblue[0].header["PARAM18"] ) 
+nxblue= np.size(datavalblue)#spec_data[0]
+PixelsBlue= biningblue*(np.arange(0,nxblue,1)+trim_offset_blue)
+lambdasblue = DispCalc(PixelsBlue, alphablue, thetablue, frblue, fdblue, flblue, zPntblue)
+
 
 #Read in the red spectrum
 datalistred = pf.open(zzcetired)
 datavalred = datalistred[0].data[0,0,:] #data[0,0,:] is optimally extracted, data[2,0,:] is sky
 sigmavalred = datalistred[0].data[3,0,:] #Sigma spectrum
+'''
+#Linearized red wavelengths
 wav0red = datalistred[0].header['crval1']
 deltawavred = datalistred[0].header['cd1_1']
 lambdasred = np.ones(len(datavalred))
@@ -129,8 +175,25 @@ ivalred = np.arange(1,len(datavalred))
 for i in ivalred:
     lambdasred[i] = lambdasred[i-1] + deltawavred
 
-FWHM = FWHMpix * deltawavblue #FWHM in Angstroms
+'''
+#Grating equation red wavelengths
+alphared = float(datalistred[0].header['GRT_TARG'])
+thetared = float(datalistred[0].header['CAM_TARG'])
+frred = float(datalistred[0].header['LINDEN'])
+fdred = float(datalistred[0].header['CAMFUD'])
+flred = float(datalistred[0].header['FOCLEN'])
+zPntred = float(datalistred[0].header['ZPOINT'])
 
+trim_sec_red= datalistred[0].header["CCDSEC"]
+trim_offset_red= float( trim_sec_red[1:len(trim_sec_red)-1].split(':')[0] )-1
+biningred= float( datalistred[0].header["PARAM18"] ) 
+nxred= np.size(datavalred)#spec_data[0]
+PixelsRed= biningred*(np.arange(0,nxred,1)+trim_offset_red)
+lambdasred = DispCalc(PixelsRed, alphared, thetared, frred, fdred, flred, zPntred)
+
+
+#FWHM = FWHMpix * deltawavblue #FWHM in Angstroms linearized
+FWHM = FWHMpix * (lambdasblue[-1] - lambdasblue[0])/nxblue #from grating equation
 
 #Concatenate both into two arrays
 lambdas = np.concatenate((lambdasblue,lambdasred))
@@ -145,11 +208,9 @@ sigmaval = np.ones(len(lambdas))
 
 #plot the spectrum
 #plt.clf()
-#plt.plot(lambdas,sigmaval,label='data')
+#plt.plot(lambdas,dataval,label='data')
 #plt.show()
 #sys.exit()
-#print len(dataval)
-#print len(wav)
 
 # This sets pixel range.
 afitlow = np.min(np.where(lambdas > 6380.))
@@ -169,7 +230,7 @@ ghi = np.min(np.where(lambdas > 4490.))
 
 
 #hlow = np.min(np.where(lambdas > 3860.)) #For H8
-hlow = np.min(np.where(lambdas > 3782.)) #Includes H10
+hlow = np.min(np.where(lambdas > 3782.)) #Includes H10 
 #hlow = np.min(np.where(lambdas > 3755.)) #includes H11
 hhi = np.min(np.where(lambdas > 4195.)) #4191 
 dlow = np.min(np.where(lambdas > 4040.))
@@ -502,7 +563,6 @@ bsigma = bsigmasnew / bli
 
 
 #plt.clf()
-#plt.plot(blambdas,bnline)
 #plt.plot(blambdasnew,bnline)
 #plt.show()
 #sys.exit()
@@ -522,7 +582,7 @@ gnline = gamvalnew / gli
 gsigma = gsigmasnew / gli
 
 #plt.clf()
-#plt.plot(glambdas,gnline)
+#plt.plot(glambdasnew,gnline)
 #plt.show()
 #sys.exit()
 
@@ -615,7 +675,6 @@ H10nline = H10valtemp[H10normlow:H10normhi+1] / H10li
 H10sigma = H10sigtemp[H10normlow:H10normhi+1] / H10li
 
 
-
 #plt.clf()
 #plt.plot(dlambdas,dnline)
 #plt.show()
@@ -670,7 +729,7 @@ lambdaindex = [afitlow,afithi,alow,ahi,bfitlow,bfithi,blow,bhi,gfitlow,gfithi,gl
 #lambdaindex = [0,len(H9lambdas)-1.,len(H9lambdas),len(H9lambdas)+len(H8lambdas)-1.,len(H9lambdas)+len(H8lambdas),len(H9lambdas)+len(H8lambdas)+len(elambdas)-1.,len(H9lambdas)+len(H8lambdas)+len(elambdas),len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)-1.,len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas),len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdas)-1.,len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdas),len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdas)+len(blambdas)-1.]
 
 variation = alphavariation + betavariation + gammavariation + highervariation
-print variation
+#print variation
 #plt.clf()
 #plt.plot(alllambda,allnline)
 #plt.show()
@@ -694,12 +753,12 @@ case = 0 #We'll be interpolating Koester's raw models
 filenames = 'modelnames.txt'
 path = '/afs/cas.unc.edu/depts/physics_astronomy/clemens/students/group/modelfitting/DA_models'
 #np.savetxt('norm_WD1422p095.txt',np.transpose([alllambda,allnline]))
-#ncflux,bestT,bestg = intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path)
+ncflux,bestT,bestg = intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path)
 #print bestT,bestg
 bestT, bestg = 12250, 825
 #print lambdaindex
 #print indices
-#sys.exit()
+sys.exit()
 
 #######
 # Now we want to compute the finer grid
