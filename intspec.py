@@ -2,7 +2,11 @@
 """
 Created on Sun Jan 18 20:16:17 2015
 
-@author: joshfuchs
+@author: joshfuchs, based on some initial work by BH Dunlap
+
+This program is run from fitspec.py. It interpolates and convolves the models, fits them with pseudogaussians, and normalizes. It compared the model lines to the observed line profiles and calculates a chi-square. 
+
+
 """
 
 import numpy as np
@@ -19,13 +23,7 @@ import mpfit
 #ported to python from IDL by Josh Fuchs
 #Based on the IDL routine written by Bart Dunlap
 
-######################################################
-#You should not run this program by itself. It is called
-#at the end of fitspec and depends on the variables created
-#in that program.
-######################################################
-
-###############
+#==================================
 #Pseudogaussian plus cubic for continuum
 def pseudogausscubic(x,p):
     #The model function with parameters p
@@ -38,8 +36,8 @@ def fitpseudogausscubic(p,fjac=None,x=None, y=None, err=None):
     model = pseudogausscubic(x,p)
     status = 0
     return([status,(y-model)/err])
-##############
 
+#==================================
 
 #Define pseudogauss to fit one spectral line
 def pseudogauss(x,p):
@@ -54,8 +52,8 @@ def fitpseudogauss(p,fjac=None,x=None, y=None, err=None):
     status = 0
     return([status,(y-model)/err])
 
-######################
-#############
+#==================================
+
 #Pseudogaussian plus cubic through h11
 
 def gauss11cubic(x,p):
@@ -69,9 +67,8 @@ def fitgauss11cubic(p,fjac=None,x=None, y=None, err=None):
     status = 0
     return([status,(y-model)/err])
 
-######################
-######################
-#############
+#==================================
+
 #Pseudogaussian plus parabola through h11
 
 def gauss11parabola(x,p):
@@ -85,9 +82,7 @@ def fitgauss11parabola(p,fjac=None,x=None, y=None, err=None):
     status = 0
     return([status,(y-model)/err])
 
-
-######################
-
+#==================================
 
 def multipseudogauss(x,p):
     #return p[0]*1. + p[1]*x + p[2]*x**2. + p[3]*np.exp(-(np.abs(x-p[4])/(np.sqrt(2.*p[5])))**p[6]) + p[7]*np.exp(-(np.abs(x-p[8])/(np.sqrt(2.*p[9])))**p[10]) + p[11]*np.exp(-(np.abs(x-p[12])/(np.sqrt(2.*p[13])))**p[14]) + p[15]*np.exp(-(np.abs(x-p[16])/(np.sqrt(2.*p[17])))**p[18]) #This one includes Hdelta, Hepsilon, H8, and H9
@@ -99,6 +94,7 @@ def multifitpseudogauss(p,fjac=None,x=None, y=None, err=None):
     model = multipseudogauss(x,p)
     status = 0
     return([status,(y-model)/err])
+#==================================
 
 #Case = 0 means using D. Koester's raw models
 #Case = 1 means using the interpolation of those models to a smaller grid.
@@ -214,7 +210,6 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
 
             print 'Starting the 1D interpolation of the model'
             interp = InterpolatedUnivariateSpline(shortlambdas,shortinten,k=1)
-            #interp2 = InterpolatedUnivariateSpline(shortlambdas,shortinten,k=2)
             #InterpolatedUnivariateSpline seems to work as well as interp1d
             #and is significantly faster.
             intflux = interp(intlambda)
@@ -290,7 +285,7 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         #sys.exit()
         #Fit a line to the endpoints and normalize
         #Must do this for each line separately
-        #First set pixel ranges
+        #First set pixel ranges using the results from our observed spectrum
         ##################
         #For beta through H9
         ##################
@@ -667,10 +662,6 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         #hparams = mpfit.mpfit(multifitpseudogauss,hest,functkw=hfa,maxiter=3000,ftol=1e-14,parinfo=limparams,quiet=True)
         hparams = mpfit.mpfit(fitgauss11parabola,hest,functkw=hfa,maxiter=2000,ftol=1e-9,xtol=1e-11,quiet=True,parinfo=limparams)
         print 'Number of evaluations: ', hparams.niter
-        #print len(hlambdas)
-        #print hval[0:4],hval[-4:]
-        #print hest
-        #print hparams.params
         #fhigh = open('highfits.txt','a')
         #highfitstosave = str(hparams.params)
         #fhigh.write(highfitstosave + '\n')
@@ -682,7 +673,6 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         H9center = hparams.params[16]
         H10center = hparams.params[20]
         highervariation = np.sum((hfit - hval)**2.)
-        #print filename
         #hightitle = alphatitle + '   ' + str(np.round(hparams.params[20],decimals=3))
         #plt.clf()
         #plt.plot(hlambdas,hval,'b',label='Model')
@@ -736,8 +726,8 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         #H8slope = (cflux2[H8hi] - cflux2[H8low]) / (alllambda[H8hi] - alllambda[H8low])
         #H8nline = H8slope * (alllambda[H8low:H8hi+1.] - alllambda[H8low]) + cflux2[H8low]
         #H8nflux = cflux2[H8low:H8hi+1.] / H8nline
-        H8normlow = np.min(np.where(hlambdastemp > 3860.))
-        H8normhi = np.min(np.where(hlambdastemp > 3930.))
+        H8normlow = np.min(np.where(hlambdastemp > 3859.))
+        H8normhi = np.min(np.where(hlambdastemp > 3919.))
         H8slope = (hfit[H8normhi] - hfit[H8normlow]) / (hlambdastemp[H8normhi] - hlambdastemp[H8normlow])
         H8nline = H8slope * (hlambdastemp[H8normlow:H8normhi+1] - hlambdastemp[H8normlow]) + hfit[H8normlow]
         #H8nflux = cflux2[H8low:H8hi+1] / H8nline
@@ -753,8 +743,8 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         #eslope = (cflux2[ehi] - cflux2[elow]) / (alllambda[ehi] - alllambda[elow])
         #enline = eslope * (alllambda[elow:ehi+1.] - alllambda[elow]) + cflux2[elow]
         #enflux = cflux2[elow:ehi+1.] / enline
-        enormhi = np.min(np.where(hlambdastemp > 4030.))
-        enormlow = np.min(np.where(hlambdastemp > 3930.))
+        enormhi = np.min(np.where(hlambdastemp > 4015.))
+        enormlow = np.min(np.where(hlambdastemp > 3925.))
         eslope = (hfit[enormhi] - hfit[enormlow]) / (hlambdastemp[enormhi] - hlambdastemp[enormlow])
         enline = eslope * (hlambdastemp[enormlow:enormhi+1] - hlambdastemp[enormlow]) + hfit[enormlow]
         #enflux = cflux2[elow:ehi+1] / enline
@@ -770,8 +760,8 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         #dslope = (cflux2[dhi] - cflux2[dlow]) / (alllambda[dhi] - alllambda[dlow])
         #dnline = dslope * (alllambda[dlow:dhi+1.] - alllambda[dlow]) + cflux2[dlow]
         #dnflux = cflux2[dlow:dhi+1.] / dnline
-        dnormhi = np.min(np.where(hlambdastemp > 4191.))
-        dnormlow = np.min(np.where(hlambdastemp > 4040.))
+        dnormhi = np.min(np.where(hlambdastemp > 4171.))
+        dnormlow = np.min(np.where(hlambdastemp > 4031.))
         dslope = (hfit[dnormhi] - hfit[dnormlow]) / (hlambdastemp[dnormhi] - hlambdastemp[dnormlow])
         dnline = dslope * (hlambdastemp[dnormlow:dnormhi+1] - hlambdastemp[dnormlow]) + hfit[dnormlow]
         dfluxtemp = cflux2[H11low:hhi+1]
@@ -789,7 +779,7 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         #gnline = gslope * (alllambda[glow:ghi+1.] - alllambda[glow]) + cflux2[glow]
         #gnflux = cflux2[glow:ghi+1.] / gnline
         gnormlow = np.min(np.where(glambdas > 4220.))
-        gnormhi = np.min(np.where(glambdas > 4490.))
+        gnormhi = np.min(np.where(glambdas > 4460.))
         gslope = (gamfit[gnormhi] - gamfit[gnormlow]) / (glambdas[gnormhi] - glambdas[gnormlow])
         gvalnew = gamval[gnormlow:gnormhi+1]
         glambdasnew = glambdas[gnormlow:gnormhi+1]
@@ -804,8 +794,8 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         #bslope = (cflux2[bhi] - cflux2[blow]) / (alllambda[bhi] - alllambda[blow])
         #bnline = bslope * (alllambda[blow:bhi+1.] - alllambda[blow]) + cflux2[blow]
         #bnflux = cflux2[blow:bhi+1.] / bnline
-        bnormlow = np.min(np.where(blambdas > 4710.))
-        bnormhi = np.min(np.where(blambdas > 5010.))
+        bnormlow = np.min(np.where(blambdas > 4721.))
+        bnormhi = np.min(np.where(blambdas > 5001.))
         bslope = (betafit[bnormhi] - betafit[bnormlow]) / (blambdas[bnormhi] - blambdas[bnormlow])
         blambdasnew = blambdas[bnormlow:bnormhi+1]
         bvalnew = betaval[bnormlow:bnormhi+1.]

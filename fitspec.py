@@ -64,7 +64,22 @@ def fitpseudogausscubic(p,fjac=None,x=None, y=None, err=None):
     return([status,(y-model)/err])
 
 # ===========================================================================
+# ===========================================================================
 
+#Pseudogaussian with no continuum
+def pseudogaussnocon(x,p):
+    #The model function with parameters p
+    return p[4] + p[0]*np.exp(-(np.abs(x-p[1])/(np.sqrt(2.)*p[2]))**p[3])
+
+
+def fitpseudogaussnocon(p,fjac=None,x=None, y=None, err=None):
+    #Parameter values are passed in p
+    #fjac=None just means partial derivatives will not be computed.
+    model = pseudogaussnocon(x,p)
+    status = 0
+    return([status,(y-model)/err])
+
+# ===========================================================================
 #Pseudogaussian plus cubic through h11
 
 def gauss11cubic(x,p):
@@ -124,7 +139,7 @@ def DispCalc(Pixels, alpha, theta, fr, fd, fl, zPnt):
 #FWHM = 4.4 #Can read this from header using keyword SPECFWHM
 zzcetiblue = 'wtfb.wd1425-811_930_blue_flux.ms.fits'
 zzcetired = 'wtfb.wd1425-811_930_red_flux.ms.fits'
-#FWHMpix = 5.8 #The FWHM in pixels
+FWHMpix = 6.1 #The FWHM in pixels
 
 
 #Read in the blue spectrum
@@ -220,25 +235,25 @@ ahi = np.min(np.where(lambdas > 6713.))
 
 bfitlow = np.min(np.where(lambdas > 4680.))
 bfithi = np.min(np.where(lambdas > 5040.))
-blow = np.min(np.where(lambdas > 4710.))
-bhi = np.min(np.where(lambdas > 5010.))
+blow = np.min(np.where(lambdas > 4721.)) #old: 4710
+bhi = np.min(np.where(lambdas > 5001.)) #old: 5010
 
 gfitlow = np.min(np.where(lambdas > 4200.))
 gfithi = np.min(np.where(lambdas > 4510.))
-glow = np.min(np.where(lambdas > 4220.))
-ghi = np.min(np.where(lambdas > 4490.))
+glow = np.min(np.where(lambdas > 4220.)) #old: 4220
+ghi = np.min(np.where(lambdas > 4460.)) #old: 4490
 
 
 #hlow = np.min(np.where(lambdas > 3860.)) #For H8
 hlow = np.min(np.where(lambdas > 3782.)) #Includes H10 
 #hlow = np.min(np.where(lambdas > 3755.)) #includes H11
 hhi = np.min(np.where(lambdas > 4195.)) #4191 
-dlow = np.min(np.where(lambdas > 4040.))
-dhi = np.min(np.where(lambdas > 4191.))
-elow = np.min(np.where(lambdas > 3930.))
-ehi = np.min(np.where(lambdas > 4030.))
-H8low = np.min(np.where(lambdas > 3860.))
-H8hi = np.min(np.where(lambdas > 3930.)) #3930
+dlow = np.min(np.where(lambdas > 4031.)) #old: 4040
+dhi = np.min(np.where(lambdas > 4171.)) #old: 4191
+elow = np.min(np.where(lambdas > 3925.)) #old: 3930
+ehi = np.min(np.where(lambdas > 4015.)) #old: 4030
+H8low = np.min(np.where(lambdas > 3859.)) #old: 3860
+H8hi = np.min(np.where(lambdas > 3919.)) #old: 3930
 H9low = np.min(np.where(lambdas > 3815.))
 H9hi = np.min(np.where(lambdas > 3855.))
 H10low = np.min(np.where(lambdas > 3785.))
@@ -421,10 +436,22 @@ acenter = aparams.params[4]
 alphafit = pseudogausscubic(alambdas,aparams.params)
 alphavariation = np.sum((alphafit - alphaval)**2.)
 print aparams.status, aparams.niter, aparams.fnorm
-
+'''
+#Test fit with no continuum component
+aestnocon = np.zeros(5)
+aestnocon[4] = alphaval[0]
+aestnocon[0] = aest[3]
+aestnocon[1] = aest[4]
+aestnocon[2] = aest[5]
+aestnocon[3] = aest[6]
+aparamsnocon = mpfit.mpfit(fitpseudogaussnocon,aestnocon,functkw=afa,maxiter=2000,ftol=1e-14,xtol=1e-13,quiet=True)
+print aparamsnocon.status, aparamsnocon.niter, aparamsnocon.fnorm
+alphafitnocon = pseudogaussnocon(alambdas,aestnocon)
+'''
 #plt.clf()
 #plt.plot(alambdas,alphaval,'b')
 #plt.plot(alambdas,alphafit,'g')
+#plt.plot(alambdas,alphafitnocon,'r')
 #plt.plot(alambdas,pseudogausscubic(alambdas,aest),'k')
 #plt.plot(alambdas,aparams.params[0]*1. + aparams.params[1]*alambdas +aparams.params[2]*alambdas**2.)
 #plt.show()
@@ -551,8 +578,8 @@ blambdas = blambdas - (bcenter-4862.710)
 #bnline = dataval[blow:bhi+1] / bli
 #bsigma =  sigmaval[blow:bhi+1] / bli
 
-bnormlow = np.min(np.where(blambdas > 4710.))
-bnormhi = np.min(np.where(blambdas > 5010.))
+bnormlow = np.min(np.where(blambdas > 4721.))
+bnormhi = np.min(np.where(blambdas > 5001.))
 bslope = (betafit[bnormhi] - betafit[bnormlow] ) / (blambdas[bnormhi] - blambdas[bnormlow])
 blambdasnew = blambdas[bnormlow:bnormhi+1]
 betavalnew = betaval[bnormlow:bnormhi+1]
@@ -572,7 +599,7 @@ bsigma = bsigmasnew / bli
 #Set the center of the line to the wavelength in vacuum
 glambdas = glambdas - (gcenter-4341.692)
 gnormlow = np.min(np.where(glambdas > 4220.))
-gnormhi = np.min(np.where(glambdas > 4490.))
+gnormhi = np.min(np.where(glambdas > 4460.))
 gslope = (gamfit[gnormhi] - gamfit[gnormlow] ) / (glambdas[gnormhi] - glambdas[gnormlow])
 glambdasnew = glambdas[gnormlow:gnormhi+1]
 gamvalnew = gamval[gnormlow:gnormhi+1]
@@ -589,8 +616,8 @@ gsigma = gsigmasnew / gli
 #Now normalize the higher order lines (delta, epsilon, H8)
 hlambdastemp = hlambdas - (dcenter-4102.892)
 #dlambdas = dlambdas- (dcenter-4102.892)
-dnormlow = np.min(np.where(hlambdastemp > 4040.))
-dnormhi = np.min(np.where(hlambdastemp > 4191.))
+dnormlow = np.min(np.where(hlambdastemp > 4031.))
+dnormhi = np.min(np.where(hlambdastemp > 4171.))
 dlambdas = hlambdastemp[dnormlow:dnormhi+1]
 #dslope = (hfit[np.min(np.where(hlambdas > 4191.))] - hfit[np.min(np.where(hlambdas > 4040.))] ) / (lambdas[dhi] - lambdas[dlow])
 dslope = (hfit[dnormhi] - hfit[dnormlow]) / (hlambdastemp[dnormhi] - hlambdastemp[dnormlow])
@@ -606,8 +633,8 @@ dsigma = dsigtemp[dnormlow:dnormhi+1] / dli
 
 #elambdas = elambdas - (ecenter-3971.198)
 hlambdastemp = hlambdas - (ecenter-3971.198)
-enormlow = np.min(np.where(hlambdastemp > 3930.))
-enormhi = np.min(np.where(hlambdastemp > 4030.))
+enormlow = np.min(np.where(hlambdastemp > 3925.))
+enormhi = np.min(np.where(hlambdastemp > 4015.))
 elambdas = hlambdastemp[enormlow:enormhi+1]
 #eslope = (hfit[np.min(np.where(hlambdas > 4030.))] - hfit[np.min(np.where(hlambdas > 3930.))] ) / (lambdas[ehi] - lambdas[elow])
 #eli = eslope * (elambdas - elambdas[0]) + hfit[np.min(np.where(hlambdas > 3930.))]
@@ -623,8 +650,8 @@ esigma = esigtemp[enormlow:enormhi+1] / eli
 
 #H8lambdas = H8lambdas - (H8center-3890.166)
 hlambdastemp = hlambdas - (H8center-3890.166)
-H8normlow = np.min(np.where(hlambdastemp > 3860.))
-H8normhi = np.min(np.where(hlambdastemp > 3930.))
+H8normlow = np.min(np.where(hlambdastemp > 3859.))
+H8normhi = np.min(np.where(hlambdastemp > 3919.))
 H8lambdas = hlambdastemp[H8normlow:H8normhi+1]
 #H8slope = (hfit[np.min(np.where(hlambdas > 3930.))] - hfit[np.min(np.where(hlambdas > 3860.))] ) / (lambdas[H8hi] - lambdas[H8low])
 #H8li = H8slope * (H8lambdas - H8lambdas[0]) + hfit[np.min(np.where(hlambdas > 3860.))]
@@ -750,7 +777,7 @@ velocity = c * (measuredcenter-restwavelength)/restwavelength
 
 print "Starting intspec.py now "
 case = 0 #We'll be interpolating Koester's raw models
-filenames = 'modelnames.txt'
+filenames = 'modeltests.txt'
 path = '/afs/cas.unc.edu/depts/physics_astronomy/clemens/students/group/modelfitting/DA_models'
 #np.savetxt('norm_WD1422p095.txt',np.transpose([alllambda,allnline]))
 ncflux,bestT,bestg = intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path)
