@@ -5,10 +5,10 @@ Created on Wed Jan 21 14:16:05 2015
 @author: joshfuchs
 
 To do:
-- Enter spec names and fwhm in command line
 - Clean up code and document better
 
 Done:
+- Enter spec names and fwhm in command line
 - Save and plot chi-square surfaces so that we can fit them automatically.
 - Save each individual chi-square surface for each line
 - Make sure interpolated models go out through H-alpha
@@ -133,13 +133,10 @@ def DispCalc(Pixels, alpha, theta, fr, fd, fl, zPnt):
 
 
 #Now we need to read in actual spectrum. This is for Goodman spectra.
-#Eventually make this a command line parameters
 #zzcetiblue = 'wtnb.0526.WD1422p095_930_blue.ms.fits'
 #zzcetired = 'wtnb.0532.WD1422p095_930_red.ms.fits'
 #FWHM = 4.4 #Can read this from header using keyword SPECFWHM
-zzcetiblue = 'wtfb.wd1425-811_930_blue_flux.ms.fits'
-zzcetired = 'wtfb.wd1425-811_930_red_flux.ms.fits'
-FWHMpix = 6.1 #The FWHM in pixels
+script, zzcetiblue, zzcetired = sys.argv
 
 
 #Read in the blue spectrum
@@ -227,7 +224,8 @@ sigmaval = np.ones(len(lambdas))
 #plt.show()
 #sys.exit()
 
-# This sets pixel range.
+# This sets pixel range for the fitting and normalization
+#beta, gamma, delta, epsilon and 8 are the same as the Montreal group.
 afitlow = np.min(np.where(lambdas > 6380.))
 afithi = np.min(np.where(lambdas > 6760.))
 alow = np.min(np.where(lambdas > 6413.))
@@ -262,7 +260,8 @@ H10hi = np.min(np.where(lambdas > 3815.))
 #H11hi = np.min(np.where(lambdas > 3785.))
 
 
-#Make the estimates in a smart AND consistent manner. This matches what is done for the model fitting.
+#Set up estimates for pseudo-gaussian fitting
+#Make the estimates in a smart and consistent manner.
 
 alambdas = lambdas[afitlow:afithi+1]
 asigmas = sigmaval[afitlow:afithi+1]
@@ -279,13 +278,14 @@ aest[2] = ap[1]
 aest[7] = ap[0]
 aest[3] = np.min(dataval[alow:ahi+1]) - app(6562.79) #depth of line relative to continuum
 aest[4] = 6562.79 #rest wavelength of H alpha
-#aest[5] = 35. #NEED TO CHECK THIS
 ahalfmax = app(6562.79) + aest[3]/3.
 adiff = np.abs(alphaval-ahalfmax)
 alowidx = adiff[np.where(alambdas < 6562.79)].argmin()
 ahighidx = adiff[np.where(alambdas > 6562.79)].argmin() + len(adiff[np.where(alambdas < 6562.79)])
 aest[5] = (alambdas[ahighidx] - alambdas[alowidx]) / (2.*np.sqrt(2.*np.log(2.))) #convert FWHM to sigma
 aest[6] = 1. #how much of a pseudo-gaussian
+
+
 
 blambdas = lambdas[bfitlow:bfithi+1]
 bsigmas = sigmaval[bfitlow:bfithi+1]
@@ -302,13 +302,14 @@ best[2] = bp[1]
 best[7] = bp[0]
 best[3] = np.min(dataval[blow:bhi+1]) - bpp(4862.71) #depth of line relative to continuum
 best[4] = 4862.71 #rest wavelength of H beta
-#best[5] = 35. #NEED TO CHECK THIS
 bhalfmax = bpp(4862.71) + best[3]/2.5
 bdiff = np.abs(betaval-bhalfmax)
 blowidx = bdiff[np.where(blambdas < 4862.71)].argmin()
 bhighidx = bdiff[np.where(blambdas > 4862.71)].argmin() + len(bdiff[np.where(blambdas < 4862.71)])
 best[5] = (blambdas[bhighidx] - blambdas[blowidx]) / (2.*np.sqrt(2.*np.log(2.))) #convert FWHM to sigma
 best[6] = 1. #how much of a pseudo-gaussian
+
+
 
 glambdas = lambdas[gfitlow:gfithi+1]
 gsigmas = sigmaval[gfitlow:gfithi+1]
@@ -325,13 +326,13 @@ gest[2] = gp[1]
 gest[7] = gp[0]
 gest[3] = np.min(dataval[glow:ghi+1]) - gpp(4341.692) #depth of line relative to continuum
 gest[4] = 4341.692 #rest wavelength of H gamma
-#gest[5] = 26. #NEED TO CHECK THIS
 ghalfmax = gpp(4341.69) + gest[3]/3.
 gdiff = np.abs(gamval-ghalfmax)
 glowidx = gdiff[np.where(glambdas < 4341.69)].argmin()
 ghighidx = gdiff[np.where(glambdas > 4341.69)].argmin() + len(bdiff[np.where(glambdas < 4341.69)])
 gest[5] = (glambdas[ghighidx] - glambdas[glowidx]) / (2.*np.sqrt(2.*np.log(2.))) #convert FWHM to sigma
 gest[6] = 1. #how much of a pseudo-gaussian
+
 
 
 dlambdas = lambdas[dlow:dhi+1]
@@ -358,7 +359,6 @@ hest[2] = hp[0]
 #Now delta
 hest[3] = np.min(dataval[dlow:dhi+1]) - hpp(4102.892) #depth of line relative to continuum
 hest[4] = 4102.892 #rest wavelength of H delta
-#hest[5] = 17. #NEED TO CHECK THIS
 dhalfmax = hpp(4102.89) + hest[3]/3.
 ddiff = np.abs(dval-dhalfmax)
 dlowidx = ddiff[np.where(dlambdas < 4102.89)].argmin()
@@ -369,7 +369,6 @@ hest[6] = 1.2 #how much of a pseudo-gaussian
 #Now epsilon
 hest[7] = np.min(dataval[elow:ehi+1]) - hpp(3971.198) #depth of line relative to continuum
 hest[8] = 3971.198 #rest wavelength of H epsilon
-#hest[9] = 14. #NEED TO CHECK THIS
 ehalfmax = hpp(3971.19) + hest[7]/3.
 ediff = np.abs(epval-ehalfmax)
 elowidx = ediff[np.where(elambdas < 3971.19)].argmin()
@@ -380,7 +379,6 @@ hest[10] = 1.2 #how much of a pseudo-gaussian
 #Now H8
 hest[11] = np.min(dataval[H8low:H8hi+1]) - hpp(3890.166) #depth of line relative to continuum
 hest[12] = 3890.166 #rest wavelength of H8
-#hest[13] = 14. #NEED TO CHECK THIS
 H8halfmax = hpp(3890.16) + hest[11]/3.
 H8diff = np.abs(H8val-H8halfmax)
 H8lowidx = H8diff[np.where(H8lambdas < 3890.16)].argmin()
@@ -391,7 +389,6 @@ hest[14] = 1.2 #how much of a pseudo-gaussian
 #Now H9
 hest[15] = np.min(dataval[H9low:H9hi+1]) - hpp(3836.485) #depth of line relative to continuum
 hest[16] = 3837.485 #rest wavelength of H9
-#hest[17] = 10. #NEED TO CHECK THIS
 H9halfmax = hpp(3836.48) + hest[15]/3.
 H9diff = np.abs(H9val-H9halfmax)
 H9lowidx = H9diff[np.where(H9lambdas < 3836.48)].argmin()
@@ -402,7 +399,6 @@ hest[18] = 1.2 #how much of a pseudo-gaussian
 #Now H10
 hest[19] = np.min(dataval[H10low:H10hi+1]) - hpp(3797.909) #depth of line relative to continuum
 hest[20] = 3798.909 #rest wavelength of H10
-#hest[21] = 5. #NEED TO CHECK THIS
 H10halfmax = hpp(3798.8) + hest[19]/3.
 H10diff = np.abs(H10val-H10halfmax)
 H10lowidx = H10diff[np.where(H10lambdas < 3798.8)].argmin()
@@ -418,13 +414,7 @@ hest[22] = 1.2 #how much of a pseudo-gaussian
 
  
 #Fit alpha
-#To fit line for continuum, fix parameter two to zero.
-paralpha = [{'fixed':0} for i in range(7)] #7 total parameters
-#paralpha[2]['fixed'] = 1
 
-#alambdas = lambdas[alow:ahi+1]
-#asigmas = sigmaval[alow:ahi+1]
-#alphaval = dataval[alow:ahi+1]
 #alambdas = lambdas[afitlow:afithi+1]
 #asigmas = sigmaval[afitlow:afithi+1]
 #alphaval = dataval[afitlow:afithi+1]
@@ -458,9 +448,6 @@ alphafitnocon = pseudogaussnocon(alambdas,aestnocon)
 #sys.exit()
 
 #Fit beta
-#blambdas = lambdas[blow:bhi+1]
-#bsigmas = sigmaval[blow:bhi+1]
-#betaval = dataval[blow:bhi+1]
 #blambdas = lambdas[bfitlow:bfithi+1]
 #bsigmas = sigmaval[bfitlow:bfithi+1]
 #betaval = dataval[bfitlow:bfithi+1]
@@ -502,11 +489,6 @@ gammavariation = np.sum((gamfit - gamval)**2.)
 #sys.exit()
 
 
-#To fit line for continuum, fix parameter two to zero.
-#parhigh = [{'fixed':0} for i in range(23)] #23 total parameters
-#parhigh[2]['fixed'] = 1
-#parhigh[1]['fixed'] = 1
-#parhigh[0]['fixed'] = 1
 
 #Fit higher order lines
 print '\nNow fitting higher order lines.' 
@@ -542,7 +524,9 @@ highervariation = np.sum((hfit - hval)**2.)
 #plt.show()
 #sys.exit()
 
-#Fit a line to the fit points  from each end
+
+
+#Fit a line to the fit points  from each end and divide by this line to normalize. 
 #Note the line needs to be linear in lambda not in pixel
 #bnline is the normalized spectral line. Continuum set to one.
 
@@ -554,7 +538,7 @@ alambdas = alambdas - (acenter- 6564.60)
 #anline = dataval[alow:ahi+1] / ali
 #asigma = sigmaval[alow:ahi+1] / ali
 
-anormlow = np.min(np.where(alambdas > 6413.))
+anormlow = np.min(np.where(alambdas > 6413.)) #Refind the normalization points since we have shifted the line.
 anormhi = np.min(np.where(alambdas > 6713.))
 aslope = (alphafit[anormhi] - alphafit[anormlow] ) / (alambdas[anormhi] - alambdas[anormlow])
 alambdasnew = alambdas[anormlow:anormhi+1]
@@ -571,7 +555,7 @@ asigma = asigmasnew / ali
 #sys.exit()
 
 #Now to beta
-#Set the center of the line to the wavelength in vacuum. Models are in vacuum wavelengths.
+#Set the center of the line to the wavelength in vacuum.
 blambdas = blambdas - (bcenter-4862.710)
 #bslope = (betafit[-1] - betafit[0] ) / (blambdas[-1] - blambdas[0])
 #bli = bslope * (blambdas - blambdas[0]) + betafit[0]
@@ -615,7 +599,6 @@ gsigma = gsigmasnew / gli
 
 #Now normalize the higher order lines (delta, epsilon, H8)
 hlambdastemp = hlambdas - (dcenter-4102.892)
-#dlambdas = dlambdas- (dcenter-4102.892)
 dnormlow = np.min(np.where(hlambdastemp > 4031.))
 dnormhi = np.min(np.where(hlambdastemp > 4171.))
 dlambdas = hlambdastemp[dnormlow:dnormhi+1]
@@ -764,10 +747,10 @@ variation = alphavariation + betavariation + gammavariation + highervariation
 #print lambdaindex
 #sys.exit()
 
-measuredcenter = np.array([acenter,bcenter,gcenter,dcenter,ecenter,H8center,H9center])
-restwavelength = np.array([6562.79,4862.71,4341.69,4102.89,3971.19,3890.16,3836.48])
-c = 2.99792e5
-velocity = c * (measuredcenter-restwavelength)/restwavelength
+#measuredcenter = np.array([acenter,bcenter,gcenter,dcenter,ecenter,H8center,H9center])
+#restwavelength = np.array([6562.79,4862.71,4341.69,4102.89,3971.19,3890.16,3836.48])
+#c = 2.99792e5
+#velocity = c * (measuredcenter-restwavelength)/restwavelength
 
 #plt.clf()
 #plt.plot(restwavelength,velocity,'b^')
