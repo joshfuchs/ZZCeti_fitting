@@ -31,6 +31,7 @@ from intspec import intspecs
 from finegrid import makefinegrid
 import sys
 import os
+import datetime
 
 
 # ===========================================================================
@@ -243,7 +244,7 @@ ghi = np.min(np.where(lambdas > 4460.)) #old: 4490
 
 
 #hlow = np.min(np.where(lambdas > 3860.)) #For H8
-hlow = np.min(np.where(lambdas > 3782.)) #Includes H10 
+hlow = np.min(np.where(lambdas > 3778.)) #Includes H10, normally 3782, might try 3772 
 #hlow = np.min(np.where(lambdas > 3755.)) #includes H11
 hhi = np.min(np.where(lambdas > 4195.)) #4191 
 dlow = np.min(np.where(lambdas > 4031.)) #old: 4040
@@ -356,9 +357,12 @@ hest[0] = hp[2]
 hest[1] = hp[1]
 hest[2] = hp[0]
 
+#Set a wavelength offset in case the wavelength calibration is eggregiously wrong.
+lambdaoffset = -9.
+
 #Now delta
 hest[3] = np.min(dataval[dlow:dhi+1]) - hpp(4102.892) #depth of line relative to continuum
-hest[4] = 4102.892 #rest wavelength of H delta
+hest[4] = 4102.892 + lambdaoffset #rest wavelength of H delta
 dhalfmax = hpp(4102.89) + hest[3]/3.
 ddiff = np.abs(dval-dhalfmax)
 dlowidx = ddiff[np.where(dlambdas < 4102.89)].argmin()
@@ -368,7 +372,7 @@ hest[6] = 1.2 #how much of a pseudo-gaussian
 
 #Now epsilon
 hest[7] = np.min(dataval[elow:ehi+1]) - hpp(3971.198) #depth of line relative to continuum
-hest[8] = 3971.198 #rest wavelength of H epsilon
+hest[8] = 3971.198 + lambdaoffset  #rest wavelength of H epsilon
 ehalfmax = hpp(3971.19) + hest[7]/3.
 ediff = np.abs(epval-ehalfmax)
 elowidx = ediff[np.where(elambdas < 3971.19)].argmin()
@@ -378,7 +382,7 @@ hest[10] = 1.2 #how much of a pseudo-gaussian
 
 #Now H8
 hest[11] = np.min(dataval[H8low:H8hi+1]) - hpp(3890.166) #depth of line relative to continuum
-hest[12] = 3890.166 #rest wavelength of H8
+hest[12] = 3890.166 + lambdaoffset  #rest wavelength of H8
 H8halfmax = hpp(3890.16) + hest[11]/3.
 H8diff = np.abs(H8val-H8halfmax)
 H8lowidx = H8diff[np.where(H8lambdas < 3890.16)].argmin()
@@ -388,7 +392,7 @@ hest[14] = 1.2 #how much of a pseudo-gaussian
 
 #Now H9
 hest[15] = np.min(dataval[H9low:H9hi+1]) - hpp(3836.485) #depth of line relative to continuum
-hest[16] = 3837.485 #rest wavelength of H9
+hest[16] = 3837.485 + lambdaoffset  #rest wavelength of H9
 H9halfmax = hpp(3836.48) + hest[15]/3.
 H9diff = np.abs(H9val-H9halfmax)
 H9lowidx = H9diff[np.where(H9lambdas < 3836.48)].argmin()
@@ -398,7 +402,7 @@ hest[18] = 1.2 #how much of a pseudo-gaussian
 
 #Now H10
 hest[19] = np.min(dataval[H10low:H10hi+1]) - hpp(3797.909) #depth of line relative to continuum
-hest[20] = 3798.909 #rest wavelength of H10
+hest[20] = 3798.909 + lambdaoffset  #rest wavelength of H10
 H10halfmax = hpp(3798.8) + hest[19]/3.
 H10diff = np.abs(H10val-H10halfmax)
 H10lowidx = H10diff[np.where(H10lambdas < 3798.8)].argmin()
@@ -752,15 +756,17 @@ variation = alphavariation + betavariation + gammavariation + highervariation
 #c = 2.99792e5
 #velocity = c * (measuredcenter-restwavelength)/restwavelength
 
-#plt.clf()
-#plt.plot(restwavelength,velocity,'b^')
-#plt.show()
-#alllambdas and allnline are used in intspec.py
-#Now call intspec.py to run the model program
+
+##### Save the normalized spectrum for later use
+now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M")
+marker = str(np.round(FWHM,decimals=2))
+endpoint = '.ms.'
+savespecname = 'norm_' + zzcetiblue[5:zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_' + marker + '.txt' 
+np.savetxt(savespecname,np.transpose([alllambda,allnline,allsigma]))
 
 print "Starting intspec.py now "
 case = 0 #We'll be interpolating Koester's raw models
-filenames = 'modeltests.txt'
+filenames = 'modelnames.txt'
 path = '/afs/cas.unc.edu/depts/physics_astronomy/clemens/students/group/modelfitting/DA_models'
 #np.savetxt('norm_WD1422p095.txt',np.transpose([alllambda,allnline]))
 ncflux,bestT,bestg = intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path)
