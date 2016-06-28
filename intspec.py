@@ -105,13 +105,13 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
     :DESCRIPTION: Interpolates and convolves DA models to match observed spectra. Fits pseudogaussians to DA models and compares to normalized, observed spectra. Save chi-square values.
 
     :INPUTS
-       alllambda: 1D numpy array, observed wavelengths
+       alllambda: 1D numpy array, wavelengths of normalized Balmer lines, shifted from observed
 
        allnline: 1D numpy array, observed, normalized Balmer line fluxes
 
        allsigma: 1D numpy array, sigma values for fluxes
 
-       lambdaindex: 1D numpy array, index value for fitting of the Balmer lines for wavelengths
+       lambdaindex: 1D numpy array, index value for fitting of the Balmer lines for wavelengths. These indices work only for 'lambdas', i.e. the full blue + red wavelength range
 
        case: boolean, Case = 0 means using D. Koester's raw models, Case = 1 means using the interpolation of those models to a smaller grid.
 
@@ -380,8 +380,11 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         #H8low = lambdaindex[0]
         #H8hi = lambdaindex[1]
 
-        ##################
-        #Use mpfit to fit pseudo-gaussian to models.
+
+        #=====================================================================================
+        # Start section using mpfit to fit pseudogaussians to models to normalize
+        #=====================================================================================
+        '''
         #First set up the estimates
 
         #Choose the initial guesses in a smart AND consistent manner
@@ -685,17 +688,15 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         #sys.exit()
 
 
-        #Normalize the lines. The first option uses the raw models to normalize to itself. The second option use the pseudogaussian fits to the models to normalize.
+        #Normalize the lines. This  option use the pseudogaussian fits to the models to normalize.
         #First H10
-        #First make center of pseudo gauss fit to be at 3797.909
-        hlambdastemp = hlambdas - (H10center-3797.909)
-        #H10lambdas = H10lambdas - (H10center-3797.909)
+        #First make center of pseudo gauss fit to be at center of model
+        hlambdastemp = hlambdas - (H10center-3798.9799)
         #Since we have the center matched up, now set the normalization points and normalize to those
         H10normlow = np.min(np.where(hlambdastemp > 3785.))
         H10normhi = np.min(np.where(hlambdastemp > 3815.))
         H10slope = (hfit[H10normhi] - hfit[H10normlow]) / (hlambdastemp[H10normhi] - hlambdastemp[H10normlow])
         H10nline = H10slope * (hlambdastemp[H10normlow:H10normhi+1] - hlambdastemp[H10normlow]) + hfit[H10normlow]
-        #H10nflux = cflux2[H10low:H10hi+1] / H10nline
         H10fluxtemp = cflux2[H11low:hhi+1]
         H10nfluxtemp = H10fluxtemp[H10normlow:H10normhi+1] / H10nline
         #Our wavelengths are now different from those in our observed spectrum since we shifted. So interpolate the normalized line and read out the wavelengths we want.
@@ -704,11 +705,7 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
 
 
         #Now H9
-        hlambdastemp = hlambdas - (H9center- 3836.485)
-        #H9slope = (cflux2[H9hi] - cflux2[H9low]) / (alllambda[H9hi] - alllambda[H9low])
-        #H9nline = H9slope * (alllambda[H9low:H9hi+1.] - alllambda[H9low]) + cflux2[H9low]
-        #H9nflux = cflux2[H9low:H9hi+1.] / H9nline
-        #H9lambdas = H9lambdas - (H9center- 3836.485)
+        hlambdastemp = hlambdas - (H9center- 3836.4726)
         H9normlow = np.min(np.where(hlambdastemp > 3815.))
         H9normhi = np.min(np.where(hlambdastemp > 3855.))
         H9slope = (hfit[H9normhi] - hfit[H9normlow]) / (hlambdastemp[H9normhi] - hlambdastemp[H9normlow])
@@ -721,11 +718,7 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
 
 
         #Then H8
-        #H8lambdas = H8lambdas - (H8center-3890.166)
-        hlambdastemp = hlambdas - (H8center-3890.166)
-        #H8slope = (cflux2[H8hi] - cflux2[H8low]) / (alllambda[H8hi] - alllambda[H8low])
-        #H8nline = H8slope * (alllambda[H8low:H8hi+1.] - alllambda[H8low]) + cflux2[H8low]
-        #H8nflux = cflux2[H8low:H8hi+1.] / H8nline
+        hlambdastemp = hlambdas - (H8center-3890.1461)
         H8normlow = np.min(np.where(hlambdastemp > 3859.))
         H8normhi = np.min(np.where(hlambdastemp > 3919.))
         H8slope = (hfit[H8normhi] - hfit[H8normlow]) / (hlambdastemp[H8normhi] - hlambdastemp[H8normlow])
@@ -738,11 +731,7 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
 
 
         #Then H epsilon
-        #elambdas = elambdas - (ecenter-3971.198)
-        hlambdastemp = hlambdas - (ecenter-3971.198)
-        #eslope = (cflux2[ehi] - cflux2[elow]) / (alllambda[ehi] - alllambda[elow])
-        #enline = eslope * (alllambda[elow:ehi+1.] - alllambda[elow]) + cflux2[elow]
-        #enflux = cflux2[elow:ehi+1.] / enline
+        hlambdastemp = hlambdas - (ecenter-3971.1751)
         enormhi = np.min(np.where(hlambdastemp > 4015.))
         enormlow = np.min(np.where(hlambdastemp > 3925.))
         eslope = (hfit[enormhi] - hfit[enormlow]) / (hlambdastemp[enormhi] - hlambdastemp[enormlow])
@@ -755,11 +744,7 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
 
 
         #Then H delta
-        #dlambdas = dlambdas - (dcenter-4102.892)
-        hlambdastemp = hlambdas - (dcenter-4102.892)
-        #dslope = (cflux2[dhi] - cflux2[dlow]) / (alllambda[dhi] - alllambda[dlow])
-        #dnline = dslope * (alllambda[dlow:dhi+1.] - alllambda[dlow]) + cflux2[dlow]
-        #dnflux = cflux2[dlow:dhi+1.] / dnline
+        hlambdastemp = hlambdas - (dcenter-4102.9071)
         dnormhi = np.min(np.where(hlambdastemp > 4171.))
         dnormlow = np.min(np.where(hlambdastemp > 4031.))
         dslope = (hfit[dnormhi] - hfit[dnormlow]) / (hlambdastemp[dnormhi] - hlambdastemp[dnormlow])
@@ -774,10 +759,7 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         #using our narrower region.
         
         #Now H gamma
-        glambdas = glambdas - (gcenter-4341.692)
-        #gslope = (cflux2[ghi] - cflux2[glow]) / (alllambda[ghi] - alllambda[glow])
-        #gnline = gslope * (alllambda[glow:ghi+1.] - alllambda[glow]) + cflux2[glow]
-        #gnflux = cflux2[glow:ghi+1.] / gnline
+        glambdas = glambdas - (gcenter-4341.6550)
         gnormlow = np.min(np.where(glambdas > 4220.))
         gnormhi = np.min(np.where(glambdas > 4460.))
         gslope = (gamfit[gnormhi] - gamfit[gnormlow]) / (glambdas[gnormhi] - glambdas[gnormlow])
@@ -790,10 +772,7 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
 
     
         #Now H beta
-        blambdas = blambdas - (bcenter-4862.710)
-        #bslope = (cflux2[bhi] - cflux2[blow]) / (alllambda[bhi] - alllambda[blow])
-        #bnline = bslope * (alllambda[blow:bhi+1.] - alllambda[blow]) + cflux2[blow]
-        #bnflux = cflux2[blow:bhi+1.] / bnline
+        blambdas = blambdas - (bcenter-4862.6510)
         bnormlow = np.min(np.where(blambdas > 4721.))
         bnormhi = np.min(np.where(blambdas > 5001.))
         bslope = (betafit[bnormhi] - betafit[bnormlow]) / (blambdas[bnormhi] - blambdas[bnormlow])
@@ -806,10 +785,7 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
 
 
         #Now H alpha
-        alambdas = alambdas - (acenter- 6564.60)
-        #aslope = (cflux2[ahi] - cflux2[alow]) / (alllambda[ahi] - alllambda[alow])
-        #anline = aslope * (alllambda[alow:ahi+1.] - alllambda[alow]) + cflux2[alow]
-        #anflux = cflux2[alow:ahi+1.] / anline
+        alambdas = alambdas - (acenter- 6564.6047)
         #alambdas includes extra fitting, so need to select inner points for normalization
         anormlow = np.min(np.where(alambdas > 6413.))
         anormhi = np.min(np.where(alambdas > 6713.))
@@ -820,7 +796,93 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         anfluxtemp = avalnew / anline
         interp = InterpolatedUnivariateSpline(alambdasnew,anfluxtemp,k=1)
         anflux = interp(alllambda[indices[14]:+indices[15]+1])
+        '''
+        #=====================================================================================
+        # End  section using mpfit to fit pseudogaussians to models to normalize
+        #=====================================================================================
+
+        #=====================================================================================
+        # Start section using model points to normalize
+        #=====================================================================================
+        cflux2 = interp2(alllambda)
+
+        ahi = indices[15]
+        alow = indices[14]
+        bhi = indices[13]
+        blow = indices[12]
+        ghi = indices[11]
+        glow = indices[10]
+        dhi = indices[9]
+        dlow = indices[8]
+        ehi = indices[7]
+        elow = indices[6]
+        H8hi = indices[5]
+        H8low = indices[4]
+        H9hi = indices[3]
+        H9low = indices[2]
+        H10hi = indices[1]
+        H10low = indices[0]
         
+
+        #Now H alpha
+        alambdas = alllambda[alow:ahi+1]
+        
+        aslope = (cflux2[ahi] - cflux2[alow]) / (alllambda[ahi] - alllambda[alow])
+        anline = aslope * (alllambda[alow:ahi+1.] - alllambda[alow]) + cflux2[alow]
+        anflux = cflux2[alow:ahi+1.] / anline
+        
+        #Now H beta
+        blambdas = alllambda[blow:bhi+1.]
+        
+        bslope = (cflux2[bhi] - cflux2[blow]) / (alllambda[bhi] - alllambda[blow])
+        bnline = bslope * (alllambda[blow:bhi+1.] - alllambda[blow]) + cflux2[blow]
+        bnflux = cflux2[blow:bhi+1.] / bnline
+
+        #Now H gamma
+        glambdas = alllambda[glow:ghi+1.]
+
+        gslope = (cflux2[ghi] - cflux2[glow]) / (alllambda[ghi] - alllambda[glow])
+        gnline = gslope * (alllambda[glow:ghi+1.] - alllambda[glow]) + cflux2[glow]
+        gnflux = cflux2[glow:ghi+1.] / gnline
+
+        #Now H delta
+        dlambdas = alllambda[dlow:dhi+1]
+        
+        dslope = (cflux2[dhi] - cflux2[dlow]) / (alllambda[dhi] - alllambda[dlow])
+        dnline = dslope * (alllambda[dlow:dhi+1.] - alllambda[dlow]) + cflux2[dlow]
+        dnflux = cflux2[dlow:dhi+1.] / dnline
+
+        #Now H epsilon
+        elambdas = alllambda[elow:ehi+1]
+
+        eslope = (cflux2[ehi] - cflux2[elow]) / (alllambda[ehi] - alllambda[elow])
+        enline = eslope * (alllambda[elow:ehi+1.] - alllambda[elow]) + cflux2[elow]
+        enflux = cflux2[elow:ehi+1.] / enline
+
+        #Now H8
+        H8lambdas = alllambda[H8low:H8hi+1]
+
+        H8slope = (cflux2[H8hi] - cflux2[H8low]) / (alllambda[H8hi] - alllambda[H8low])
+        H8nline = H8slope * (alllambda[H8low:H8hi+1.] - alllambda[H8low]) + cflux2[H8low]
+        H8nflux = cflux2[H8low:H8hi+1.] / H8nline
+
+        #Now H9
+        H9lambdas = alllambda[H9low:H9hi+1]
+        
+        H9slope = (cflux2[H9hi] - cflux2[H9low]) / (alllambda[H9hi] - alllambda[H9low])
+        H9nline = H9slope * (alllambda[H9low:H9hi+1.] - alllambda[H9low]) + cflux2[H9low]
+        H9nflux = cflux2[H9low:H9hi+1.] / H9nline
+
+        #Now H10
+        H10lambdas = alllambda[H10low:H10hi+1]
+
+        H10slope = (cflux2[H10hi] - cflux2[H10low]) / (alllambda[H10hi] - alllambda[H10low])
+        H10nline = H10slope * (alllambda[H10low:H10hi+1.] - alllambda[H10low]) + cflux2[H10low]
+        H10nflux = cflux2[H10low:H10hi+1.] / H10nline
+
+        #=====================================================================================
+        # End section using model points to normalize
+        #=====================================================================================
 
         #Concatenate into one normalized array. If you want to exclude some regions (e.g. H10) this is where you should do that.
         ###Through H8
@@ -857,7 +919,7 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         obs10sig = allsigma[indices[0]:indices[1]+1]
  
         #Save interpolated and normalized model
-        #intmodelname = 'da' + str(teff) + '_' + str(logg) + zzcetiblue[5:zzcetiblue.find('_930_')] + '_' + str(np.round(FWHM,decimals=2)) + '_norm.txt'
+        #intmodelname = 'da' + str(teff) + '_' + str(logg) + zzcetiblue[5:zzcetiblue.find('.ms.')] + '_' + str(np.round(FWHM,decimals=2)) + '_norm.txt'
         #np.savetxt(intmodelname,np.transpose([alllambda,ncflux]))
 
         #Calculate residuals and chi-square
@@ -875,7 +937,7 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
             chis8 = np.empty([numg,numt])
             chis9 = np.empty([numg,numt])
             chis10 = np.empty([numg,numt])
-            variation = np.empty([numg,numt])
+            #variation = np.empty([numg,numt])
         residual[n] =  np.sum((allnline - ncflux)**2.,dtype='d')
         chisq[n] = np.sum(((allnline - ncflux) / allsigma)**2.,dtype='d')
         allg[n] = logg
@@ -895,11 +957,8 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         chis8[ng][nt] = np.sum(((obs8 - H8nflux) / obs8sig)**2.,dtype='d')
         chis9[ng][nt] = np.sum(((obs9 - H9nflux) / obs9sig)**2.,dtype='d')
         chis10[ng][nt] = np.sum(((obs10 - H10nflux) / obs10sig)**2.,dtype='d')
-        variation[ng][nt] = alphavariation + betavariation + gammavariation + highervariation
-        #print ng,nt
-        #print int(ng),int(nt)
+        #variation[ng][nt] = alphavariation + betavariation + gammavariation + highervariation
         print 'Chi-square is ',chisq[n]
-        #print chis
         if n == 0:
             bestchi = chisq[n]
 
@@ -924,39 +983,16 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
     #gammapdf.close()
     #higherpdf.close()
     deltachi = np.subtract(chis,bestchi)
-    #plt.clf()
-    #v = np.array([1.0])
-    #plt.figure()
-    #plt.contour(gridt,gridg,deltachi,v)
-    #CS = plt.contour(gridt,gridg,deltachi,v)
-    #plt.clabel(CS)#,inline=1,fontsize=10)
-    #p = CS.collections[0].get_paths()[0]
-    #v = p.vertices #Get points for delta chi-square =1 surface
-    #ranget = np.array(v[:,0])
-    #rangeg = np.array(v[:,1])
-    #print 'Min and Max Teff are ',np.amin(ranget),' and ',np.amax(ranget)
-    #print 'Min and Max log(g) are ',np.amin(rangeg),' and ',np.amax(rangeg)
-    #uppert = np.amax(ranget)
-    #lowert = np.amin(ranget)
-    #upperg = np.amax(rangeg)
-    #lowerg = np.amin(rangeg)
-    upperterr = -999.#uppert - bestT
-    lowerterr = -999.#bestT - lowert
-    Terr = -9999.#(upperterr + lowerterr) / 2.
-    uppergerr = -999.#upperg - (bestg/1000.)
-    lowergerr = -999.#(bestg/1000.) - lowerg
-    gerr = -9999.#(uppergerr + lowergerr) / 2.
-    #plt.show()
     
     #Save information on best fitting model and the convolved model itself
-    marker = str(np.round(FWHM,decimals=2))
+    marker = str(np.round(FWHM,decimals=2)) + '_fit'
     f = open('fitting_solutions.txt','a') #'a' means solution will be appended to file if it exists, otherwise it will be created.
     now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M")
     if case == 0:
         bestmodelname = 'da' + str(int(bestT)) + '_' + str(int(bestg)) + '.dk'
     if case == 1:
         bestmodelname = 'da' + str(int(bestT)) + '_' + str(int(bestg)) + '.jf'
-    info = zzcetiblue + '\t' + zzcetired + '\t' +  bestmodelname + '\t' + str(bestT) + '\t' +  str(Terr) + '\t' + str(bestg) + '\t' + str(gerr) + '\t' + marker + '\t' + str(bestchi) + '\t' + now
+    info = zzcetiblue + '\t' + zzcetired + '\t' +  bestmodelname + '\t' + str(bestT) + '\t' + str(bestg) + '\t' + marker + '\t' + str(bestchi) + '\t' + now
     f.write(info + '\n')
     f.close()
     #Now save the best convolved model and delta chi squared surface
@@ -993,8 +1029,6 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
     if case == 1:
         print 'Best T_eff is ', bestT
         print 'Best log_g is ', bestg/1000.
-        print 'Error on T_eff is + ',upperterr,' and - ',lowerterr
-        print 'Error on log_g is + ',uppergerr,' and - ',lowergerr
     print 'Done running intspec.py'
     #plt.clf()
     #plt.plot(alllambda,allnline,'bs',label='Normalized data')

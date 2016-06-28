@@ -32,12 +32,12 @@ def makefinegrid(bestT,bestg):
 #Set up finer grid for log(g)
 #grid should go from best log(g) -.5 to best log(g) +.5 in steps of 0.05
 # firstg/100.-0.5 + 0.05*n
-    numberg = range(101) #Normally want this to be 201##############
+    numberg = range(21) #Normally want this to be 201##############
     #gridg = np.array([7.75,7.80,7.85,7.90,7.95,8.00,8.05,8.10,8.15,8.20,8.25])
     #gridg = np.array([7.84,7.85,7.86,7.87,7.88,7.89,7.90,7.91,7.92])
     gridg = np.empty(len(numberg))
     for n in numberg:
-        gridg[n] =  (firstg/100.-0.25 + 0.005*n) #############(firstg/100.-0.5 + 0.005*n)   (firstg/100.-0.25+0.05*n)
+        gridg[n] =  (firstg/100.-0.5 + 0.05*n) #############(firstg/100.-0.5 + 0.005*n)   (firstg/100.-0.25+0.05*n)
 
 #Begin iterating over different Teffs to get finer log(g)'s
     for i in testt:
@@ -46,7 +46,7 @@ def makefinegrid(bestT,bestg):
         filenames = ['da' + str(i) + '_' + str(testg[0]) + '.dk','da' + str(i) + '_' + str(testg[1]) + '.dk','da' + str(i) + '_' + str(testg[2]) + '.dk','da' + str(i) + '_' + str(testg[3]) + '.dk','da' + str(i) + '_' + str(testg[4]) + '.dk']
         grid = gridg
         case = 0 # Use 0 for log(g) interp. and 1 for Teff interp. Just a binary switch.
-        models(filenames,grid,case)
+        models(filenames,grid,case,firstt,firstg)
         print 'Made it back!'
 
 
@@ -61,7 +61,7 @@ def makefinegrid(bestT,bestg):
     #gridt = np.array([12500.,12510.,12520.,12530.,12540.,12550.,12560.,12570.,12580.,12590.,12600.,12610.,12620.,12630.,12640.,12650.,12660.,12670.,12680.,12690.,12700.])
     gridt = np.empty(len(numbert))
     for n in numbert:
-        gridt[n] = firstt-250.+5.*n #########firstt-250.+10*n
+        gridt[n] = firstt-500.+10.*n #########firstt-250.+10*n
 
 #Begin iterating over different logg's to get finer Teffs
     for i in gridg:
@@ -73,17 +73,17 @@ def makefinegrid(bestT,bestg):
     
         grid = gridt
         case = 1 # Use 0 for log(g) interp. and 1 for Teff interp. Just a binary switch.
-        models(filenames,grid,case)
+        models(filenames,grid,case,firstt,firstg)
         print 'Made it back!'
 
     print 'Done with all the log(g)s.'
     #Save file names to interpolated_names.txt
     
     print 'Saving file names to interpolated_names.txt.'
-    lowt = firstt - 250
-    lowg = firstg*10 - 250
-    ranget = 5*np.arange(101)#steps of 5 in Teff
-    rangeg = 5*np.arange(101)#steps of 0.005 in log(g)
+    lowt = firstt - 500
+    lowg = firstg*10 - 500
+    ranget = 10*np.arange(101)#steps of 5 in Teff
+    rangeg = 50*np.arange(21)#steps of 0.005 in log(g)
     f = open('interpolated_names.txt','a')
     for y in ranget:
         teffwrite = lowt + y

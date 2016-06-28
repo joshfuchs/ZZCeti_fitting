@@ -14,14 +14,18 @@ from scipy.interpolate import RectBivariateSpline
 import os
 import datetime
 
-def models(filenames,grid,case):
+def models(filenames,grid,case,bestt,bestg):
     print 'Starting to run intmodels.py'
-#Read in model. There are 33 lines of header information before the data starts
-# We do not have to integrate over mu because these files already have
+    #Read in model. There are 33 lines of header information before the data starts
+    # We do not have to integrate over mu because these files already have
+    tuse = bestt-500
+    guse = bestg-50
+    newpath = '/srv/two/jtfuchs/Interpolated_Models/1000K_1g/bottom' + str(tuse) + '_' + str(guse) 
     if case == 0:
         os.chdir('/afs/cas.unc.edu/depts/physics_astronomy/clemens/students/group/modelfitting/DA_models/')
     if case == 1:
-        os.chdir('/srv/two/jtfuchs/Interpolated_Models/')
+        #newpath = '/srv/two/jtfuchs/Interpolated_Models/10teff05logg/center' + str(bestt) + '_' + str(bestg) 
+        os.chdir(newpath)
         #os.chdir('/afs/cas.unc.edu/depts/physics_astronomy/clemens/students/group/modelfitting/DA_models/Interpolated_Models/')
 
     filename1 = filenames[0]
@@ -209,7 +213,7 @@ def models(filenames,grid,case):
     #Write and save files
     print 'Starting to save files.'
     #os.chdir('/afs/cas.unc.edu/depts/physics_astronomy/clemens/students/group/modelfitting/DA_models/Interpolated_Models/') #Save all interpolated models here.
-    os.chdir('/srv/two/jtfuchs/Interpolated_Models/')
+    os.chdir(newpath)
     if case == 0:
         newg = np.multiply(grid,1000.)
         n = 0
