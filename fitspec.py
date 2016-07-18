@@ -29,7 +29,6 @@ import pyfits as pf # Infierno doesn't support astropy for some reason so using 
 #import astropy.io.fits as pf
 import mpfit
 from intspec import intspecs
-from finegrid import makefinegrid
 import sys
 import os
 import datetime
@@ -151,8 +150,14 @@ def DispCalc(Pixels, alpha, theta, fr, fd, fl, zPnt):
 #zzcetiblue = 'wtnb.0526.WD1422p095_930_blue.ms.fits'
 #zzcetired = 'wtnb.0532.WD1422p095_930_red.ms.fits'
 #FWHM = 4.4 #Can read this from header using keyword SPECFWHM
-script, zzcetiblue, zzcetired = sys.argv
-
+if len(sys.argv) == 3: 
+    script, zzcetiblue, zzcetired = sys.argv
+    redfile = True
+elif len(sys.argv) == 2:
+    script, zzcetiblue = sys.argv
+    redfile = False
+else:
+    print '\n Incorrect number of arguments. \n'
 
 #Read in the blue spectrum
 datalistblue = pf.open(zzcetiblue)
@@ -188,84 +193,126 @@ lambdasblue = DispCalc(PixelsBlue, alphablue, thetablue, frblue, fdblue, flblue,
 
 
 #Read in the red spectrum
-datalistred = pf.open(zzcetired)
-datavalred = datalistred[0].data[0,0,:] #data[0,0,:] is optimally extracted, data[2,0,:] is sky
-sigmavalred = datalistred[0].data[3,0,:] #Sigma spectrum
-'''
-#Linearized red wavelengths
-wav0red = datalistred[0].header['crval1']
-deltawavred = datalistred[0].header['cd1_1']
-lambdasred = np.ones(len(datavalred))
-lambdasred[0] = wav0red
-ivalred = np.arange(1,len(datavalred))
-
-for i in ivalred:
+if redfile:
+    datalistred = pf.open(zzcetired)
+    datavalred = datalistred[0].data[0,0,:] #data[0,0,:] is optimally extracted, data[2,0,:] is sky
+    sigmavalred = datalistred[0].data[3,0,:] #Sigma spectrum
+    '''
+    #Linearized red wavelengths
+    wav0red = datalistred[0].header['crval1']
+    deltawavred = datalistred[0].header['cd1_1']
+    lambdasred = np.ones(len(datavalred))
+    lambdasred[0] = wav0red
+    ivalred = np.arange(1,len(datavalred))
+    
+    for i in ivalred:
     lambdasred[i] = lambdasred[i-1] + deltawavred
-
-'''
-#Grating equation red wavelengths
-alphared = float(datalistred[0].header['GRT_TARG'])
-thetared = float(datalistred[0].header['CAM_TARG'])
-frred = float(datalistred[0].header['LINDEN'])
-fdred = float(datalistred[0].header['CAMFUD'])
-flred = float(datalistred[0].header['FOCLEN'])
-zPntred = float(datalistred[0].header['ZPOINT'])
-
-trim_sec_red= datalistred[0].header["CCDSEC"]
-trim_offset_red= float( trim_sec_red[1:len(trim_sec_red)-1].split(':')[0] )-1
-biningred= float( datalistred[0].header["PARAM18"] ) 
-nxred= np.size(datavalred)#spec_data[0]
-PixelsRed= biningred*(np.arange(0,nxred,1)+trim_offset_red)
-lambdasred = DispCalc(PixelsRed, alphared, thetared, frred, fdred, flred, zPntred)
+    
+    '''
+    #Grating equation red wavelengths
+    alphared = float(datalistred[0].header['GRT_TARG'])
+    thetared = float(datalistred[0].header['CAM_TARG'])
+    frred = float(datalistred[0].header['LINDEN'])
+    fdred = float(datalistred[0].header['CAMFUD'])
+    flred = float(datalistred[0].header['FOCLEN'])
+    zPntred = float(datalistred[0].header['ZPOINT'])
+    
+    trim_sec_red= datalistred[0].header["CCDSEC"]
+    trim_offset_red= float( trim_sec_red[1:len(trim_sec_red)-1].split(':')[0] )-1
+    biningred= float( datalistred[0].header["PARAM18"] ) 
+    nxred= np.size(datavalred)#spec_data[0]
+    PixelsRed= biningred*(np.arange(0,nxred,1)+trim_offset_red)
+    lambdasred = DispCalc(PixelsRed, alphared, thetared, frred, fdred, flred, zPntred)
 
 
 #FWHM = FWHMpix * deltawavblue #FWHM in Angstroms linearized
 FWHM = FWHMpix * (lambdasblue[-1] - lambdasblue[0])/nxblue #from grating equation
 
 #Concatenate both into two arrays
-lambdas = np.concatenate((lambdasblue,lambdasred))
-dataval = np.concatenate((datavalblue,datavalred))
-sigmaval = 44./87.*np.concatenate((sigmavalblue,sigmavalred))#2.e-17 * np.ones(len(dataval)) small/big
+if redfile:
+    lambdas = np.concatenate((lambdasblue,lambdasred))
+    dataval = np.concatenate((datavalblue,datavalred))
+    sigmaval = np.concatenate((sigmavalblue,sigmavalred))#2.e-17 * np.ones(len(dataval)) small/big44./87.*
+else:
+    lambdas = np.array(lambdasblue)
+    dataval = np.array(datavalblue)
+    sigmaval = np.array(sigmavalblue)
 
 #plot the spectrum
-plt.clf()
-plt.plot(lambdas,dataval,'k')
+#plt.clf()
+#plt.plot(lambdas,dataval,'k')
 #plt.plot(lambdas,sigmaval)
 #plt.show()
 #sys.exit()
 
-# This sets pixel range for the fitting and normalization
-#beta, gamma, delta, epsilon and 8 are the same as the Montreal group.
-afitlow = np.min(np.where(lambdas > 6380.))
-afithi = np.min(np.where(lambdas > 6760.))
-alow = np.min(np.where(lambdas > 6413.))
-ahi = np.min(np.where(lambdas > 6713.))
+#Save spectrum
+#np.savetxt('GD165_modelflux.txt',np.transpose([lambdas,dataval,sigmaval]))
 
-bfitlow = np.min(np.where(lambdas > 4680.))
-bfithi = np.min(np.where(lambdas > 5040.))
-blow = np.min(np.where(lambdas > 4721.)) #old: 4710
-bhi = np.min(np.where(lambdas > 5001.)) #old: 5010
+#First define the fitting and normalization wavelengths,
+# Then sets pixel range using those points
 
-gfitlow = np.min(np.where(lambdas > 4200.))
-gfithi = np.min(np.where(lambdas > 4510.))
-glow = np.min(np.where(lambdas > 4220.)) #old: 4220
-ghi = np.min(np.where(lambdas > 4460.)) #old: 4490
+#Normal wavelengths
+alphafitwavelengthlow = 6380.#6380
+alphafitwavelengthhigh = 6760.#6760
+alphanormwavelengthlow = 6413. #6413
+alphanormwavelengthhigh = 6713. #6713
+
+betafitwavelengthlow = 4680. #4680
+betafitwavelengthhigh = 5040. #5040
+betanormwavelengthlow = 4721. #4721
+betanormwavelengthhigh = 5001. #5001
+
+gammafitwavelengthlow = 4200. #4200
+gammafitwavelengthhigh = 4510. #4510
+gammanormwavelengthlow = 4220. #4220
+gammanormwavelengthhigh = 4460. #4460
+
+highwavelengthlow = 3782.
+highwavelenghthigh = 4191. #4191 
+deltawavelengthlow = 4031. #4031
+deltawavelengthhigh = 4191. #4191
+epsilonwavelengthlow = 3925. #3925
+epsilonwavelengthhigh = 4030. # 4030
+heightwavelengthlow = 3859. #3859
+heightwavelengthhigh = 3925. # 3925
+hninewavelengthlow = 3815. #3815
+hninewavelengthhigh = 3855. #3855
+htenwavelengthlow = 3785. #3785
+htenwavelengthhigh = 3815. #3815
+
+
+#Find indices for normalization
+if redfile:
+    afitlow = np.min(np.where(lambdas > alphafitwavelengthlow)) 
+    afithi = np.min(np.where(lambdas > alphafitwavelengthhigh)) 
+    alow = np.min(np.where(lambdas > alphanormwavelengthlow))
+    ahi = np.min(np.where(lambdas > alphanormwavelengthhigh))
+
+bfitlow = np.min(np.where(lambdas > betafitwavelengthlow))
+bfithi = np.min(np.where(lambdas > betafitwavelengthhigh))
+blow = np.min(np.where(lambdas > betanormwavelengthlow))
+bhi = np.min(np.where(lambdas > betanormwavelengthhigh))
+
+gfitlow = np.min(np.where(lambdas > gammafitwavelengthlow))
+gfithi = np.min(np.where(lambdas > gammafitwavelengthhigh))
+glow = np.min(np.where(lambdas > gammanormwavelengthlow))
+ghi = np.min(np.where(lambdas > gammanormwavelengthhigh))
 
 
 #hlow = np.min(np.where(lambdas > 3860.)) #For H8
-hlow = np.min(np.where(lambdas > 3782.)) #Includes H10, normally 3782 
+hlow = np.min(np.where(lambdas > highwavelengthlow)) #Includes H10, normally 3782 
 #hlow = np.min(np.where(lambdas > 3755.)) #includes H11
-hhi = np.min(np.where(lambdas > 4195.)) #4191 
-dlow = np.min(np.where(lambdas > 4031.)) #old: 4040
-dhi = np.min(np.where(lambdas > 4191.)) #Montreal: 4171, old: 4191
-elow = np.min(np.where(lambdas > 3925.)) #old: 3930
-ehi = np.min(np.where(lambdas > 4030.)) #Montreal: 4015, old: 4030
-H8low = np.min(np.where(lambdas > 3859.)) #old: 3860
-H8hi = np.min(np.where(lambdas > 3925.)) #Montreal: 3919, old: 3930
-H9low = np.min(np.where(lambdas > 3815.))
-H9hi = np.min(np.where(lambdas > 3855.))
-H10low = np.min(np.where(lambdas > 3785.))
-H10hi = np.min(np.where(lambdas > 3815.))
+hhi = np.min(np.where(lambdas > highwavelenghthigh))
+dlow = np.min(np.where(lambdas > deltawavelengthlow))
+dhi = np.min(np.where(lambdas > deltawavelengthhigh))
+elow = np.min(np.where(lambdas > epsilonwavelengthlow))
+ehi = np.min(np.where(lambdas > epsilonwavelengthhigh))
+H8low = np.min(np.where(lambdas > heightwavelengthlow))
+H8hi = np.min(np.where(lambdas > heightwavelengthhigh))
+H9low = np.min(np.where(lambdas > hninewavelengthlow))
+H9hi = np.min(np.where(lambdas > hninewavelengthhigh))
+H10low = np.min(np.where(lambdas > htenwavelengthlow))
+H10hi = np.min(np.where(lambdas > htenwavelengthhigh))
 #H11low = np.min(np.where(lambdas > 3757.))
 #H11hi = np.min(np.where(lambdas > 3785.))
 
@@ -273,28 +320,28 @@ H10hi = np.min(np.where(lambdas > 3815.))
 #Set up estimates for pseudo-gaussian fitting
 #Make the estimates in a smart and consistent manner.
 #====================================================
-
-alambdas = lambdas[afitlow:afithi+1]
-asigmas = sigmaval[afitlow:afithi+1]
-alphaval = dataval[afitlow:afithi+1]
-
-aest = np.zeros(8)
-xes = np.array([lambdas[afitlow],lambdas[alow],lambdas[alow+10],lambdas[ahi-10],lambdas[ahi],lambdas[afithi]])
-yes = np.array([dataval[afitlow],dataval[alow],dataval[alow+10],dataval[ahi-10],dataval[ahi],dataval[afithi]])
-ap = np.polyfit(xes,yes,3)
-app = np.poly1d(ap)
-aest[0] = ap[3]
-aest[1] = ap[2]
-aest[2] = ap[1]
-aest[7] = ap[0]
-aest[3] = np.min(dataval[alow:ahi+1]) - app(6562.79) #depth of line relative to continuum
-aest[4] = 6562.79 #rest wavelength of H alpha
-ahalfmax = app(6562.79) + aest[3]/3.
-adiff = np.abs(alphaval-ahalfmax)
-alowidx = adiff[np.where(alambdas < 6562.79)].argmin()
-ahighidx = adiff[np.where(alambdas > 6562.79)].argmin() + len(adiff[np.where(alambdas < 6562.79)])
-aest[5] = (alambdas[ahighidx] - alambdas[alowidx]) / (2.*np.sqrt(2.*np.log(2.))) #convert FWHM to sigma
-aest[6] = 1. #how much of a pseudo-gaussian
+if redfile:
+    alambdas = lambdas[afitlow:afithi+1]
+    asigmas = sigmaval[afitlow:afithi+1]
+    alphaval = dataval[afitlow:afithi+1]
+    
+    aest = np.zeros(8)
+    xes = np.array([lambdas[afitlow],lambdas[alow],lambdas[alow+10],lambdas[ahi-10],lambdas[ahi],lambdas[afithi]])
+    yes = np.array([dataval[afitlow],dataval[alow],dataval[alow+10],dataval[ahi-10],dataval[ahi],dataval[afithi]])
+    ap = np.polyfit(xes,yes,3)
+    app = np.poly1d(ap)
+    aest[0] = ap[3]
+    aest[1] = ap[2]
+    aest[2] = ap[1]
+    aest[7] = ap[0]
+    aest[3] = np.min(dataval[alow:ahi+1]) - app(6562.79) #depth of line relative to continuum
+    aest[4] = 6562.79 #rest wavelength of H alpha
+    ahalfmax = app(6562.79) + aest[3]/3.
+    adiff = np.abs(alphaval-ahalfmax)
+    alowidx = adiff[np.where(alambdas < 6562.79)].argmin()
+    ahighidx = adiff[np.where(alambdas > 6562.79)].argmin() + len(adiff[np.where(alambdas < 6562.79)])
+    aest[5] = (alambdas[ahighidx] - alambdas[alowidx]) / (2.*np.sqrt(2.*np.log(2.))) #convert FWHM to sigma
+    aest[6] = 1. #how much of a pseudo-gaussian
 
 
 
@@ -560,9 +607,6 @@ hlambdas = lambdas[hlow:gfithi+1]
 hval = dataval[hlow:gfithi+1]
 hsig = sigmaval[hlow:gfithi+1]
 
-#temporarydhi = np.min(np.where(lambdas > 4171.)) 
-
-
 bigest = np.zeros(28)
 xes = np.array([lambdas[H10low],lambdas[H9low],lambdas[H8low],lambdas[elow],lambdas[dlow],lambdas[dhi],lambdas[glow],lambdas[ghi]])
 yes = np.array([dataval[H10low],dataval[H9low],dataval[H8low],dataval[elow],dataval[dlow],dataval[dhi],dataval[glow],dataval[ghi]])
@@ -668,11 +712,11 @@ hhi2 = np.min(np.where(hlambdas > 4195.))
 #print np.sum(((hval[gfitlow2:gfithi2+1]-hfit[gfitlow2:gfithi2+1]) / hsig[gfitlow2:gfithi2+1])**2.,dtype='d')
 #print np.sum(((hval[hlow2:hhi2+1]-hfit[hlow2:hhi2+1]) / hsig[hlow2:hhi2+1])**2.,dtype='d')
 print hparams.params
-#plt.clf()
-#plt.plot(hlambdas,hval,'b')
+plt.clf()
+plt.plot(hlambdas,hval,'b')
 #plt.plot(biglambdas,bigpp(biglambdas),'r')
 #plt.plot(hlambdas,bigguess,'g')
-#plt.plot(hlambdas,hfit,'r')
+plt.plot(hlambdas,hfit,'r')
 #plt.show()
 
 #sys.exit()
@@ -680,27 +724,27 @@ print hparams.params
 
 
 #Fit alpha
-
-#alambdas = lambdas[afitlow:afithi+1]
-#asigmas = sigmaval[afitlow:afithi+1]
-#alphaval = dataval[afitlow:afithi+1]
-print 'Now fitting the H alpha line.'
-afa = {'x':alambdas, 'y':alphaval, 'err':asigmas}
-aparams = mpfit.mpfit(fitpseudogausscubic,aest,functkw=afa,maxiter=2000,ftol=1e-14,xtol=1e-13,quiet=True)
-print 'Number of iterations: ', aparams.niter
-acenter = aparams.params[4]
-alphafit = pseudogausscubic(alambdas,aparams.params)
-alphavariation = np.sum((alphafit - alphaval)**2.)
-print aparams.status, aparams.niter, aparams.fnorm
-
-
-#plt.clf()
-#plt.plot(alambdas,alphaval,'b')
-#plt.plot(alambdas,alphafit,'g')
-#plt.plot(alambdas,pseudogausscubic(alambdas,aest),'k')
-#plt.plot(alambdas,aparams.params[0]*1. + aparams.params[1]*alambdas +aparams.params[2]*alambdas**2.)
-#plt.show()
-#sys.exit()
+if redfile:
+    #alambdas = lambdas[afitlow:afithi+1]
+    #asigmas = sigmaval[afitlow:afithi+1]
+    #alphaval = dataval[afitlow:afithi+1]
+    print 'Now fitting the H alpha line.'
+    afa = {'x':alambdas, 'y':alphaval, 'err':asigmas}
+    aparams = mpfit.mpfit(fitpseudogausscubic,aest,functkw=afa,maxiter=2000,ftol=1e-14,xtol=1e-13,quiet=True)
+    print 'Number of iterations: ', aparams.niter
+    acenter = aparams.params[4]
+    alphafit = pseudogausscubic(alambdas,aparams.params)
+    alphavariation = np.sum((alphafit - alphaval)**2.)
+    print aparams.status, aparams.niter, aparams.fnorm
+    
+    
+    plt.clf()
+    plt.plot(alambdas,alphaval,'b')
+    plt.plot(alambdas,alphafit,'g')
+    #plt.plot(alambdas,pseudogausscubic(alambdas,aest),'k')
+    #plt.plot(alambdas,aparams.params[0]*1. + aparams.params[1]*alambdas +aparams.params[2]*alambdas**2.)
+    #plt.show()
+    #sys.exit()
 
 #Fit beta
 #blambdas = lambdas[bfitlow:bfithi+1]
@@ -715,9 +759,9 @@ bcenter = bparams.params[4]
 betafit = pseudogausscubic(blambdas,bparams.params)
 betavariation = np.sum((betafit - betaval)**2.)
 
-#plt.clf()
-#plt.plot(blambdas,betaval,'b',label='data')
-#plt.plot(blambdas,betafit,'r',label='fit')
+plt.clf()
+plt.plot(blambdas,betaval,'b',label='data')
+plt.plot(blambdas,betafit,'r',label='fit')
 #plt.plot(blambdas,bparams.params[0]*1. + bparams.params[1]*blambdas+bparams.params[2]*blambdas**2.)
 #plt.show()
 #sys.exit()
@@ -833,38 +877,103 @@ highervariation = np.sum((hfit - hval)**2.)
 #Note the line needs to be linear in lambda not in pixel
 #bnline is the normalized spectral line. Continuum set to one.
 
+#======================================
+#Redefine normalization wavelengths so you can narrow or widen the lines but keep the psedugaussian fits the same.
+#======================================
+'''
+#Narrow wavelengths
+alphafitwavelengthlow = 6380.#6380
+alphafitwavelengthhigh = 6760.#6760
+alphanormwavelengthlow = 6435.5 #6413
+alphanormwavelengthhigh = 6690.5 #6713
+
+betafitwavelengthlow = 4680. #4680
+betafitwavelengthhigh = 5040. #5040
+betanormwavelengthlow = 4742. #4721
+betanormwavelengthhigh = 4980. #5001
+
+gammafitwavelengthlow = 4200. #4200
+gammafitwavelengthhigh = 4510. #4510
+gammanormwavelengthlow = 4238. #4220
+gammanormwavelengthhigh = 4442. #4460
+
+highwavelengthlow = 3782.
+highwavelenghthigh = 4191. #4191 
+deltawavelengthlow = 4043. #4031
+deltawavelengthhigh = 4179. #4191
+epsilonwavelengthlow = 3932.9 #3925
+epsilonwavelengthhigh = 4022.1 # 4030
+heightwavelengthlow = 3864. #3859
+heightwavelengthhigh = 3920. # 3925
+hninewavelengthlow = 3818. #3815
+hninewavelengthhigh = 3852. #3855
+htenwavelengthlow = 3787.3 #3785
+htenwavelengthhigh = 3812.7 #3815
+'''
+'''
+#Wide wavelengths
+alphafitwavelengthlow = 6380.#6380
+alphafitwavelengthhigh = 6760.#6760
+alphanormwavelengthlow = 6390.5 #6413
+alphanormwavelengthhigh = 6735.5 #6713
+
+betafitwavelengthlow = 4680. #4680
+betafitwavelengthhigh = 5040. #5040
+betanormwavelengthlow = 4700. #4721
+betanormwavelengthhigh = 5022. #5001
+
+gammafitwavelengthlow = 4200. #4200
+gammafitwavelengthhigh = 4510. #4510
+gammanormwavelengthlow = 4202. #4220
+gammanormwavelengthhigh = 4478. #4460
+
+highwavelengthlow = 3782.
+highwavelenghthigh = 4205. #4191 
+deltawavelengthlow = 4019. #4031
+deltawavelengthhigh = 4203. #4191
+epsilonwavelengthlow = 3917.1 #3925
+epsilonwavelengthhigh = 4037.8 # 4030
+heightwavelengthlow = 3854.1 #3859
+heightwavelengthhigh = 3930.1 # 3925
+hninewavelengthlow = 3812. #3815
+hninewavelengthhigh = 3858. #3855
+htenwavelengthlow = 3782.7 #3785
+htenwavelengthhigh = 3817.2 #3815
+'''
+
 
 
 #======================================
 #Normalize using the pseudogaussian fits
 #======================================
+print 'Now normalizing the models using the pseudogaussian fits.'
+if redfile:
+    #Start with alpha
+    #Set the center of the line to the wavelength of the models.
+    alambdas = alambdas - (acenter- 6564.6047)
+    #aslope = (alphafit[-1] - alphafit[0] ) / (alambdas[-1] - alambdas[0])
+    #ali = aslope * (alambdas - alambdas[0]) + alphafit[0]
+    #anline = dataval[alow:ahi+1] / ali
+    #asigma = sigmaval[alow:ahi+1] / ali
 
-#Start with alpha
-#Set the center of the line to the wavelength of the models.
-alambdas = alambdas - (acenter- 6564.6047)
-#aslope = (alphafit[-1] - alphafit[0] ) / (alambdas[-1] - alambdas[0])
-#ali = aslope * (alambdas - alambdas[0]) + alphafit[0]
-#anline = dataval[alow:ahi+1] / ali
-#asigma = sigmaval[alow:ahi+1] / ali
-
-anormlow = np.min(np.where(alambdas > 6413.)) #Refind the normalization points since we have shifted the line.
-anormhi = np.min(np.where(alambdas > 6713.))
-aslope = (alphafit[anormhi] - alphafit[anormlow] ) / (alambdas[anormhi] - alambdas[anormlow])
-alambdasnew = alambdas[anormlow:anormhi+1]
-alphavalnew = alphaval[anormlow:anormhi+1]
-asigmasnew = asigmas[anormlow:anormhi+1]
-ali = aslope * (alambdasnew - alambdas[anormlow]) + alphafit[anormlow]
-anline = alphavalnew / ali
-asigma = asigmasnew / ali
-
-
-#plt.clf()
-#plt.plot(alambdasnew,anline)
-plt.plot(alambdas[anormlow],alphafit[anormlow],'g^')
-plt.plot(alambdas[anormhi],alphafit[anormhi],'g^')
-plt.plot(alambdasnew,ali,'g')
-#plt.show()
-#sys.exit()
+    anormlow = np.min(np.where(alambdas > alphanormwavelengthlow)) #Refind the normalization points since we have shifted the line.
+    anormhi = np.min(np.where(alambdas > alphanormwavelengthhigh))
+    aslope = (alphafit[anormhi] - alphafit[anormlow] ) / (alambdas[anormhi] - alambdas[anormlow])
+    alambdasnew = alambdas[anormlow:anormhi+1]
+    alphavalnew = alphaval[anormlow:anormhi+1]
+    asigmasnew = asigmas[anormlow:anormhi+1]
+    ali = aslope * (alambdasnew - alambdas[anormlow]) + alphafit[anormlow]
+    anline = alphavalnew / ali
+    asigma = asigmasnew / ali
+    
+    
+    #plt.clf()
+    #plt.plot(alambdasnew,anline)
+    plt.plot(alambdas[anormlow],alphafit[anormlow],'g^')
+    plt.plot(alambdas[anormhi],alphafit[anormhi],'g^')
+    plt.plot(alambdasnew,ali,'g')
+    #plt.show()
+    #sys.exit()
 
 #Now to beta
 #Set the center of the line to the wavelength of the models.
@@ -874,8 +983,8 @@ blambdas = blambdas - (bcenter-4862.6510)
 #bnline = dataval[blow:bhi+1] / bli
 #bsigma =  sigmaval[blow:bhi+1] / bli
 
-bnormlow = np.min(np.where(blambdas > 4721.))
-bnormhi = np.min(np.where(blambdas > 5001.))
+bnormlow = np.min(np.where(blambdas > betanormwavelengthlow))
+bnormhi = np.min(np.where(blambdas > betanormwavelengthhigh))
 bslope = (betafit[bnormhi] - betafit[bnormlow] ) / (blambdas[bnormhi] - blambdas[bnormlow])
 blambdasnew = blambdas[bnormlow:bnormhi+1]
 betavalnew = betaval[bnormlow:bnormhi+1]
@@ -897,8 +1006,8 @@ plt.plot(blambdasnew,bli,'g')
 #gnline is the normalized spectral line. Continuum set to one.
 #Set the center of the line to the wavelength of models
 glambdas = glambdas - (gcenter-4341.6550)
-gnormlow = np.min(np.where(glambdas > 4220.))
-gnormhi = np.min(np.where(glambdas > 4460.))
+gnormlow = np.min(np.where(glambdas > gammanormwavelengthlow))
+gnormhi = np.min(np.where(glambdas > gammanormwavelengthhigh))
 gslope = (gamfit[gnormhi] - gamfit[gnormlow] ) / (glambdas[gnormhi] - glambdas[gnormlow])
 glambdasnew = glambdas[gnormlow:gnormhi+1]
 gamvalnew = gamval[gnormlow:gnormhi+1]
@@ -919,13 +1028,13 @@ plt.plot(glambdasnew,gli,'g')
 
 #Now normalize the higher order lines (delta, epsilon, H8)
 hlambdastemp = hlambdas - (dcenter-4102.9071)
-dnormlow = np.min(np.where(hlambdastemp > 4031.))
-dnormhi = np.min(np.where(hlambdastemp > 4191.))
+dnormlow = np.min(np.where(hlambdastemp > deltawavelengthlow))
+dnormhi = np.min(np.where(hlambdastemp > deltawavelengthhigh))
 dlambdas = hlambdastemp[dnormlow:dnormhi+1]
 dslope = (hfit[dnormhi] - hfit[dnormlow]) / (hlambdastemp[dnormhi] - hlambdastemp[dnormlow])
 dli = dslope * (dlambdas - dlambdas[0]) + hfit[dnormlow]
-dvaltemp = dataval[hlow:hhi+1]
-dsigtemp = sigmaval[hlow:hhi+1]
+dvaltemp = dataval[hlow:gfithi+1]
+dsigtemp = sigmaval[hlow:gfithi+1]
 dnline = dvaltemp[dnormlow:dnormhi+1] / dli
 dsigma = dsigtemp[dnormlow:dnormhi+1] / dli
 
@@ -935,8 +1044,8 @@ plt.plot(dlambdas,dli,'g')
 
 #elambdas = elambdas - (ecenter-3971.198)
 hlambdastemp = hlambdas - (ecenter-3971.1751)
-enormlow = np.min(np.where(hlambdastemp > 3925.))
-enormhi = np.min(np.where(hlambdastemp > 4030.))
+enormlow = np.min(np.where(hlambdastemp > epsilonwavelengthlow))
+enormhi = np.min(np.where(hlambdastemp > epsilonwavelengthhigh))
 elambdas = hlambdastemp[enormlow:enormhi+1]
 eslope = (hfit[enormhi] - hfit[enormlow] ) / (hlambdastemp[enormhi] - hlambdastemp[enormlow])
 eli = eslope * (elambdas - elambdas[0]) + hfit[enormlow]
@@ -951,8 +1060,8 @@ plt.plot(elambdas,eli,'g')
 
 #H8lambdas = H8lambdas - (H8center-3890.166)
 hlambdastemp = hlambdas - (H8center-3890.1461)
-H8normlow = np.min(np.where(hlambdastemp > 3859.))
-H8normhi = np.min(np.where(hlambdastemp > 3925.))
+H8normlow = np.min(np.where(hlambdastemp > heightwavelengthlow))
+H8normhi = np.min(np.where(hlambdastemp > heightwavelengthhigh))
 H8lambdas = hlambdastemp[H8normlow:H8normhi+1]
 H8slope = (hfit[H8normhi] - hfit[H8normlow] ) / (hlambdastemp[H8normhi] - hlambdastemp[H8normlow])
 H8li = H8slope * (H8lambdas - H8lambdas[0]) + hfit[H8normlow]
@@ -967,9 +1076,10 @@ plt.plot(H8lambdas,H8li,'g')
 
 ### To normalize, using points from end of region since it is so small.
 #H9lambdas = H9lambdas - (H9center- 3836.485)
+H9center = 3835.9
 hlambdastemp = hlambdas - (H9center- 3836.4726)
-H9normlow = np.min(np.where(hlambdastemp > 3815.))
-H9normhi = np.min(np.where(hlambdastemp > 3855.))
+H9normlow = np.min(np.where(hlambdastemp > hninewavelengthlow))
+H9normhi = np.min(np.where(hlambdastemp > hninewavelengthhigh))
 H9lambdas = hlambdastemp[H9normlow:H9normhi+1]
 H9slope = (hfit[H9normhi] - hfit[H9normlow] ) / (hlambdastemp[H9normhi] - hlambdastemp[H9normlow])
 H9li = H9slope * (H9lambdas - H9lambdas[0]) + hfit[H9normlow]
@@ -984,10 +1094,10 @@ plt.plot(H9lambdas,H9li,'g')
 
 #H10lambdas = H10lambdas - (H10center-3797.909)
 #print H10center
-#H10center = 3797.26
+H10center = 3798.7
 hlambdastemp = hlambdas - (H10center-3798.9799)
-H10normlow = np.min(np.where(hlambdastemp > 3785.))
-H10normhi = np.min(np.where(hlambdastemp > 3815.))
+H10normlow = np.min(np.where(hlambdastemp > htenwavelengthlow))
+H10normhi = np.min(np.where(hlambdastemp > htenwavelengthhigh))
 H10lambdas = hlambdastemp[H10normlow:H10normhi+1]
 H10slope = (hfit[H10normhi] - hfit[H10normlow] ) / (hlambdastemp[H10normhi] - hlambdastemp[H10normlow])
 H10li = H10slope * (H10lambdas - H10lambdas[0]) + hfit[H10normlow]
@@ -1003,6 +1113,8 @@ plt.plot(H10lambdas,H10li,'g')
 #======================================
 #Normalize by averaging continuum points and pseudogaussians for centers
 #======================================
+'''
+print 'Now normalizing the models by averaging.'
 alambdas = lambdas[afitlow:afithi+1]
 blambdas = lambdas[bfitlow:bfithi+1]
 hlambdas = lambdas[hlow:gfithi+1]
@@ -1234,6 +1346,7 @@ plt.plot(H10lambdas,H10li,'r')
 
 plt.show()
 sys.exit()
+'''
 #======================================
 #End section to normalize by averaging continuum points and pseudogaussians for centers
 #======================================
@@ -1263,36 +1376,22 @@ sys.exit()
 
 #Combine all the normalized lines together into one array for model fitting
 ###For Halpha through H10
-alllambda = np.concatenate((H10lambdas,H9lambdas,H8lambdas,elambdas,dlambdas,glambdasnew,blambdasnew,alambdasnew))
-allnline = np.concatenate((H10nline,H9nline,H8nline,enline,dnline,gnline,bnline,anline))
-allsigma = np.concatenate((H10sigma,H9sigma,H8sigma,esigma,dsigma,gsigma,bsigma,asigma))
-indices  = [0,len(H10lambdas)-1.,len(H10lambdas),len(H10lambdas)+len(H9lambdas)-1.,len(H10lambdas)+len(H9lambdas),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)-1.,len(H10lambdas)+len(H9lambdas)+len(H8lambdas),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)-1.,len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)-1.,len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdasnew)-1.,len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdasnew),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdasnew)+len(blambdasnew)-1.,len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdasnew)+len(blambdasnew),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdasnew)+len(blambdasnew)+len(alambdasnew)-1.]
-lambdaindex = [afitlow,afithi,alow,ahi,bfitlow,bfithi,blow,bhi,gfitlow,gfithi,glow,ghi,hlow,hhi,dlow,dhi,elow,ehi,H8low,H8hi,H9low,H9hi,H10low,H10hi]
-#print len(H10nline),len(H9nline),len(H8nline),len(enline),len(dnline),len(gnline),len(bnline),len(anline)
+if redfile:
+    alllambda = np.concatenate((H10lambdas,H9lambdas,H8lambdas,elambdas,dlambdas,glambdasnew,blambdasnew,alambdasnew))
+    allnline = np.concatenate((H10nline,H9nline,H8nline,enline,dnline,gnline,bnline,anline))
+    allsigma = np.concatenate((H10sigma,H9sigma,H8sigma,esigma,dsigma,gsigma,bsigma,asigma))
+    indices  = [0,len(H10lambdas)-1.,len(H10lambdas),len(H10lambdas)+len(H9lambdas)-1.,len(H10lambdas)+len(H9lambdas),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)-1.,len(H10lambdas)+len(H9lambdas)+len(H8lambdas),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)-1.,len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)-1.,len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdasnew)-1.,len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdasnew),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdasnew)+len(blambdasnew)-1.,len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdasnew)+len(blambdasnew),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdasnew)+len(blambdasnew)+len(alambdasnew)-1.]
+    lambdaindex = [H10low,H10hi,H9low,H9hi,H8low,H8hi,elow,ehi,dlow,dhi,hlow,hhi,gfitlow,gfithi,glow,ghi,bfitlow,bfithi,blow,bhi,afitlow,afithi,alow,ahi]
+    #lambdaindex = [afitlow,afithi,alow,ahi,bfitlow,bfithi,blow,bhi,gfitlow,gfithi,glow,ghi,hlow,hhi,dlow,dhi,elow,ehi,H8low,H8hi,H9low,H9hi,H10low,H10hi]
+    #print len(H10nline),len(H9nline),len(H8nline),len(enline),len(dnline),len(gnline),len(bnline),len(anline)
+else:
+    alllambda = np.concatenate((H10lambdas,H9lambdas,H8lambdas,elambdas,dlambdas,glambdasnew,blambdasnew))
+    allnline = np.concatenate((H10nline,H9nline,H8nline,enline,dnline,gnline,bnline))
+    allsigma = np.concatenate((H10sigma,H9sigma,H8sigma,esigma,dsigma,gsigma,bsigma))
+    indices  = [0,len(H10lambdas)-1.,len(H10lambdas),len(H10lambdas)+len(H9lambdas)-1.,len(H10lambdas)+len(H9lambdas),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)-1.,len(H10lambdas)+len(H9lambdas)+len(H8lambdas),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)-1.,len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)-1.,len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdasnew)-1.,len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdasnew),len(H10lambdas)+len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdasnew)+len(blambdasnew)-1.]
+    lambdaindex = [H10low,H10hi,H9low,H9hi,H8low,H8hi,elow,ehi,dlow,dhi,hlow,hhi,gfitlow,gfithi,glow,ghi,bfitlow,bfithi,blow,bhi]
+    #print len(H10nline),len(H9nline),len(H8nline),len(enline),len(dnline),len(gnline),len(bnline),len(anline)
 
-######For Halpha through H8
-#alllambda = np.concatenate((H8lambdas,elambdas,dlambdas,glambdas,blambdas,alambdas))
-#allnline = np.concatenate((H8nline,enline,dnline,gnline,bnline,anline))
-#allsigma = np.concatenate((H8sigma,esigma,dsigma,gsigma,bsigma,asigma))
-#lambdaindex = [0,len(H8lambdas)-1.,len(H8lambdas),len(H8lambdas)+len(elambdas)-1.,len(H8lambdas)+len(elambdas),len(H8lambdas)+len(elambdas)+len(dlambdas)-1.,len(H8lambdas)+len(elambdas)+len(dlambdas),len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdasnew)-1.,len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdasnew),len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdasnew)+len(blambdasnew)-1.,len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdasnew)+len(blambdasnew),len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdasnew)+len(blambdasnew)+len(alambdasnew)-1.]
-
-######For Halpha through H9
-#alllambda = np.concatenate((H9lambdas,H8lambdas,elambdas,dlambdas,glambdas,blambdas,alambdas))
-#allnline = np.concatenate((H9nline,H8nline,enline,dnline,gnline,bnline,anline))
-#allsigma = np.concatenate((H9sigma,H8sigma,esigma,dsigma,gsigma,bsigma,asigma))
-#lambdaindex = [0,len(H9lambdas)-1.,len(H9lambdas),len(H9lambdas)+len(H8lambdas)-1.,len(H9lambdas)+len(H8lambdas),len(H9lambdas)+len(H8lambdas)+len(elambdas)-1.,len(H9lambdas)+len(H8lambdas)+len(elambdas),len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)-1.,len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas),len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdas)-1.,len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdas),len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdas)+len(blambdas)-1.,len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdas)+len(blambdas),len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdas)+len(blambdas)+len(alambdas)-1.]
-
-######For Hbeta through H8
-#alllambda = np.concatenate((H8lambdas,elambdas,dlambdas,glambdas,blambdas))
-#allnline = np.concatenate((H8nline,enline,dnline,gnline,bnline))
-#allsigma = np.concatenate((H8sigma,esigma,dsigma,gsigma,bsigma))
-#lambdaindex = [0,len(H8lambdas)-1.,len(H8lambdas),len(H8lambdas)+len(elambdas)-1.,len(H8lambdas)+len(elambdas),len(H8lambdas)+len(elambdas)+len(dlambdas)-1.,len(H8lambdas)+len(elambdas)+len(dlambdas),len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdas)-1.,len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdas),len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdas)+len(blambdas)-1.]
-
-#########For Hbeta through H9
-#alllambda = np.concatenate((H9lambdas,H8lambdas,elambdas,dlambdas,glambdas,blambdas))
-#allnline = np.concatenate((H9nline,H8nline,enline,dnline,gnline,bnline))
-#allsigma = np.concatenate((H9sigma,H8sigma,esigma,dsigma,gsigma,bsigma))
-#lambdaindex = [0,len(H9lambdas)-1.,len(H9lambdas),len(H9lambdas)+len(H8lambdas)-1.,len(H9lambdas)+len(H8lambdas),len(H9lambdas)+len(H8lambdas)+len(elambdas)-1.,len(H9lambdas)+len(H8lambdas)+len(elambdas),len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)-1.,len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas),len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdas)-1.,len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdas),len(H9lambdas)+len(H8lambdas)+len(elambdas)+len(dlambdas)+len(glambdas)+len(blambdas)-1.]
 
 #variation = alphavariation + betavariation + gammavariation + highervariation
 #print variation
@@ -1308,7 +1407,7 @@ lambdaindex = [afitlow,afithi,alow,ahi,bfitlow,bfithi,blow,bhi,gfitlow,gfithi,gl
 
 ##### Save the normalized spectrum for later use
 now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M")
-marker = str(np.round(FWHM,decimals=2)) + '_fit'
+marker = str(np.round(FWHM,decimals=2))
 endpoint = '.ms.'
 savespecname = 'norm_' + zzcetiblue[5:zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_' + marker + '.txt' 
 np.savetxt(savespecname,np.transpose([alllambda,allnline,allsigma]))
@@ -1317,22 +1416,24 @@ np.savetxt(savespecname,np.transpose([alllambda,allnline,allsigma]))
 #aest,best,bigest for guesses and aparams.params, bparams.params, hparams.params
 savefitparams = 'params_' + zzcetiblue[5:zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_' + marker + '.txt'
 saveparams = np.zeros([len(bigest),6])
-saveparams[0:len(aest),0] = aest
 saveparams[0:len(best),1] = best
 saveparams[0:len(bigest),2] = bigest
-saveparams[0:len(aparams.params),3] = aparams.params
 saveparams[0:len(bparams.params),4] = bparams.params
 saveparams[0:len(hparams.params),5] = hparams.params
+if redfile:
+    saveparams[0:len(aest),0] = aest
+    saveparams[0:len(aparams.params),3] = aparams.params
 
 np.savetxt(savefitparams,saveparams)
 
 #Save the pseudogaussian fits to the spectrum as a pdf
 savefitspec = 'fit_' + zzcetiblue[5:zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_' + marker + '.pdf'
 fitpdf = PdfPages(savefitspec)
-plt.clf()
-plt.plot(alambdas,alphaval,'b')
-plt.plot(alambdas,alphafit,'r')
-fitpdf.savefig()
+if redfile:
+    plt.clf()
+    plt.plot(alambdas,alphaval,'b')
+    plt.plot(alambdas,alphafit,'r')
+    fitpdf.savefig()
 plt.clf()
 plt.plot(blambdas,betaval,'b')
 plt.plot(blambdas,betafit,'r')
@@ -1344,28 +1445,28 @@ fitpdf.savefig()
 fitpdf.close()
 #sys.exit()
 
+#=================
+#Run the spectrum through the coarse grid
+if not redfile:
+    zzcetired = 'not_fitting_Halpha'
+
+
 print "Starting intspec.py now "
 case = 0 #We'll be interpolating Koester's raw models
 filenames = 'modelnames.txt'
 path = '/afs/cas.unc.edu/depts/physics_astronomy/clemens/students/group/modelfitting/DA_models'
-#ncflux,bestT,bestg = intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path)
+#ncflux,bestT,bestg = intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path,marker.redfile)
 #print bestT,bestg
-bestT, bestg = 12000, 750
+bestT, bestg = 11500, 750
 #sys.exit()
 
-#######
-# Now we want to compute the finer grid
-#######
-#makefinegrid(bestT,bestg)
-#sys.exit()
-###################
-# Compute the Chi-square for
-# Each of those
-###################
 
+#================
+#Run the spectrum through the fine grid
 case = 1 #We'll be comparing our new grid to the spectrum.
 filenames = 'interpolated_names.txt'
 #path = '/srv/two/jtfuchs/Interpolated_Models/10teff05logg/center' + str(bestT) + '_' + str(bestg)
-path = '/srv/two/jtfuchs/Interpolated_Models/1000K_1g/bottom' + str(bestT) + '_' + str(bestg)
-ncflux,bestT,bestg = intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path)
+#path = '/srv/two/jtfuchs/Interpolated_Models/1000K_1g/bottom' + str(bestT) + '_' + str(bestg)
+path = '/srv/two/jtfuchs/Interpolated_Models/MEGAGRIDS/bottom' + str(bestT) + '_' + str(bestg)
+ncflux,bestT,bestg = intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path,marker,redfile)
 

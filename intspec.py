@@ -99,7 +99,7 @@ def multifitpseudogauss(p,fjac=None,x=None, y=None, err=None):
 #Case = 0 means using D. Koester's raw models
 #Case = 1 means using the interpolation of those models to a smaller grid.
 
-def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path):
+def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path,marker,redfile):
 
     '''
     :DESCRIPTION: Interpolates and convolves DA models to match observed spectra. Fits pseudogaussians to DA models and compares to normalized, observed spectra. Save chi-square values.
@@ -128,6 +128,8 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
        indices: 1D numpy array, indices to break up alllambda, allnline, and allsigma into individual balmer lines. Starts with highest order line and goes through H alpha.
 
        path: string, file path path to models
+
+       redfile: True if Halpha included. False if not included.
 
     '''
 
@@ -286,99 +288,59 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         #Fit a line to the endpoints and normalize
         #Must do this for each line separately
         #First set pixel ranges using the results from our observed spectrum
-        ##################
-        #For beta through H9
-        ##################
-        #blow = lambdaindex[10]
-        #bhi = lambdaindex[11]
-        #glow = lambdaindex[8]
-        #ghi = lambdaindex[9]
-        #dlow = lambdaindex[6]
-        #dhi = lambdaindex[7]
-        #elow = lambdaindex[4]
-        #ehi = lambdaindex[5]
-        #H8low = lambdaindex[2]
-        #H8hi = lambdaindex[3]
-        #H9low = lambdaindex[0]
-        #H9hi = lambdaindex[1]
-
-        ####################
-        #For beta through H8
-        ####################
-        #blow = lambdaindex[8]
-        #bhi = lambdaindex[9]
-        #glow = lambdaindex[6]
-        #ghi = lambdaindex[7]
-        #dlow = lambdaindex[4]
-        #dhi = lambdaindex[5]
-        #elow = lambdaindex[2]
-        #ehi = lambdaindex[3]
-        #H8low = lambdaindex[0]
-        #H8hi = lambdaindex[1]
+        
 
         ####################
         #For alpha through H10
         ####################
-        afitlow = lambdaindex[0]
-        afithi = lambdaindex[1]
-        alow = lambdaindex[2]
-        ahi = lambdaindex[3]
-        bfitlow = lambdaindex[4]
-        bfithi = lambdaindex[5]
-        blow = lambdaindex[6]
-        bhi = lambdaindex[7]
-        gfitlow = lambdaindex[8]
-        gfithi = lambdaindex[9]
-        glow = lambdaindex[10]
-        ghi = lambdaindex[11]
-        hlow = lambdaindex[12]
-        hhi = lambdaindex[13]
-        dlow = lambdaindex[14]
-        dhi = lambdaindex[15]
-        elow = lambdaindex[16]
-        ehi = lambdaindex[17]
-        H8low = lambdaindex[18]
-        H8hi = lambdaindex[19]
-        H9low = lambdaindex[20]
-        H9hi = lambdaindex[21]
-        H10low = lambdaindex[22]
-        H10hi = lambdaindex[23]
-        H11low = np.min(np.where(lambdarange > 3770.))
-
-        ####################
-        #For alpha through H9
-        ####################
-        #alow = lambdaindex[12]
-        #ahi = lambdaindex[13]
-        #blow = lambdaindex[10]
-        #bhi = lambdaindex[11]
-        #glow = lambdaindex[8]
-        #ghi = lambdaindex[9]
-        #dlow = lambdaindex[6]
-        #dhi = lambdaindex[7]
-        #elow = lambdaindex[4]
-        #ehi = lambdaindex[5]
-        #H8low = lambdaindex[2]
-        #H8hi = lambdaindex[3]
-        #H9low = lambdaindex[0]
-        #H9hi = lambdaindex[1]
-
-
-        ####################
-        #For alpha through H8
-        ####################
-        #alow = lambdaindex[10]
-        #ahi = lambdaindex[11]
-        #blow = lambdaindex[8]
-        #bhi = lambdaindex[9]
-        #glow = lambdaindex[6]
-        #ghi = lambdaindex[7]
-        #dlow = lambdaindex[4]
-        #dhi = lambdaindex[5]
-        #elow = lambdaindex[2]
-        #ehi = lambdaindex[3]
-        #H8low = lambdaindex[0]
-        #H8hi = lambdaindex[1]
+        if redfile:
+            afitlow = lambdaindex[20]
+            afithi = lambdaindex[21]
+            alow = lambdaindex[22]
+            ahi = lambdaindex[23]
+            bfitlow = lambdaindex[16]
+            bfithi = lambdaindex[17]
+            blow = lambdaindex[18]
+            bhi = lambdaindex[19]
+            gfitlow = lambdaindex[12]
+            gfithi = lambdaindex[13]
+            glow = lambdaindex[14]
+            ghi = lambdaindex[15]
+            hlow = lambdaindex[10]
+            hhi = lambdaindex[11]
+            dlow = lambdaindex[8]
+            dhi = lambdaindex[9]
+            elow = lambdaindex[6]
+            ehi = lambdaindex[7]
+            H8low = lambdaindex[4]
+            H8hi = lambdaindex[5]
+            H9low = lambdaindex[2]
+            H9hi = lambdaindex[3]
+            H10low = lambdaindex[0]
+            H10hi = lambdaindex[1]
+            H11low = np.min(np.where(lambdarange > 3770.))
+        else:
+            bfitlow = lambdaindex[16]
+            bfithi = lambdaindex[17]
+            blow = lambdaindex[18]
+            bhi = lambdaindex[19]
+            gfitlow = lambdaindex[12]
+            gfithi = lambdaindex[13]
+            glow = lambdaindex[14]
+            ghi = lambdaindex[15]
+            hlow = lambdaindex[10]
+            hhi = lambdaindex[11]
+            dlow = lambdaindex[8]
+            dhi = lambdaindex[9]
+            elow = lambdaindex[6]
+            ehi = lambdaindex[7]
+            H8low = lambdaindex[4]
+            H8hi = lambdaindex[5]
+            H9low = lambdaindex[2]
+            H9hi = lambdaindex[3]
+            H10low = lambdaindex[0]
+            H10hi = lambdaindex[1]
+            H11low = np.min(np.where(lambdarange > 3770.))
 
 
         #=====================================================================================
@@ -805,9 +767,9 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         # Start section using model points to normalize
         #=====================================================================================
         cflux2 = interp2(alllambda)
-
-        ahi = indices[15]
-        alow = indices[14]
+        if redfile:
+            ahi = indices[15]
+            alow = indices[14]
         bhi = indices[13]
         blow = indices[12]
         ghi = indices[11]
@@ -823,13 +785,13 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         H10hi = indices[1]
         H10low = indices[0]
         
-
-        #Now H alpha
-        alambdas = alllambda[alow:ahi+1]
         
-        aslope = (cflux2[ahi] - cflux2[alow]) / (alllambda[ahi] - alllambda[alow])
-        anline = aslope * (alllambda[alow:ahi+1.] - alllambda[alow]) + cflux2[alow]
-        anflux = cflux2[alow:ahi+1.] / anline
+        #Now H alpha
+        if redfile:
+            alambdas = alllambda[alow:ahi+1]
+            aslope = (cflux2[ahi] - cflux2[alow]) / (alllambda[ahi] - alllambda[alow])
+            anline = aslope * (alllambda[alow:ahi+1.] - alllambda[alow]) + cflux2[alow]
+            anflux = cflux2[alow:ahi+1.] / anline
         
         #Now H beta
         blambdas = alllambda[blow:bhi+1.]
@@ -884,13 +846,11 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         # End section using model points to normalize
         #=====================================================================================
 
-        #Concatenate into one normalized array. If you want to exclude some regions (e.g. H10) this is where you should do that.
-        ###Through H8
-        #ncflux = np.concatenate((H8nflux,enflux,dnflux,gnflux,bnflux,anflux))
-        #ncflux = np.concatenate((H8nflux,enflux,dnflux,gnflux,bnflux))
-        #ncflux = np.concatenate((H9nflux,H8nflux,enflux,dnflux,gnflux,bnflux))
-        #ncflux = np.concatenate((H9nflux,H8nflux,enflux,dnflux,gnflux,bnflux,anflux))
-        ncflux = np.concatenate((H10nflux,H9nflux,H8nflux,enflux,dnflux,gnflux,bnflux,anflux))
+        #Concatenate into one normalized array.
+        if redfile:
+            ncflux = np.concatenate((H10nflux,H9nflux,H8nflux,enflux,dnflux,gnflux,bnflux,anflux))
+        else:
+            ncflux = np.concatenate((H10nflux,H9nflux,H8nflux,enflux,dnflux,gnflux,bnflux))
         #print len(H10nflux),len(H9nflux),len(H8nflux),len(enflux),len(dnflux),len(gnflux),len(bnflux),len(anflux)
         #plt.clf()
         #plt.plot(alllambda,ncflux,'b^')
@@ -900,7 +860,10 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         #np.savetxt(newfilename,np.transpose([alllambda,ncflux]))
 
         #Get the observed fluxes and sigma for each line so that we can compute chi square for each line individually
-        obsalpha = allnline[indices[14]:+indices[15]+1]
+        if redfile:
+            obsalpha = allnline[indices[14]:+indices[15]+1]
+            obsalphasig = allsigma[indices[14]:+indices[15]+1]
+        
         obsbeta = allnline[indices[12]:indices[13]+1]
         obsgamma = allnline[indices[10]:indices[11]+1]
         obsdelta = allnline[indices[8]:indices[9]+1]
@@ -909,7 +872,6 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         obs9 = allnline[indices[2]:indices[3]+1]
         obs10 = allnline[indices[0]:indices[1]+1]
 
-        obsalphasig = allsigma[indices[14]:+indices[15]+1]
         obsbetasig = allsigma[indices[12]:indices[13]+1]
         obsgammasig = allsigma[indices[10]:indices[11]+1]
         obsdeltasig = allsigma[indices[8]:indices[9]+1]
@@ -929,7 +891,8 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
             allg = np.empty(len(files))
             allt = np.empty(len(files))
             chis = np.empty([numg,numt]) #logg by Teff #######
-            chisalpha = np.empty([numg,numt])
+            if redfile:
+                chisalpha = np.empty([numg,numt])
             chisbeta = np.empty([numg,numt])
             chisgamma = np.empty([numg,numt])
             chisdelta = np.empty([numg,numt])
@@ -949,7 +912,8 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
             ng = round(((logg/1000.) - lowestg) / deltag)#round to fix float/int issu
             nt = round((teff - lowestt) / deltat)#round to fix float/int issu
         chis[ng][nt] = chisq[n] #Save values in a matrix
-        chisalpha[ng][nt] = np.sum(((obsalpha - anflux) / obsalphasig)**2.,dtype='d')
+        if redfile:
+            chisalpha[ng][nt] = np.sum(((obsalpha - anflux) / obsalphasig)**2.,dtype='d')
         chisbeta[ng][nt] = np.sum(((obsbeta -bnflux) / obsbetasig)**2.,dtype='d')
         chisgamma[ng][nt] = np.sum(((obsgamma - gnflux) / obsgammasig)**2.,dtype='d')
         chisdelta[ng][nt] = np.sum(((obsdelta - dnflux) / obsdeltasig)**2.,dtype='d')
@@ -985,7 +949,6 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
     deltachi = np.subtract(chis,bestchi)
     
     #Save information on best fitting model and the convolved model itself
-    marker = str(np.round(FWHM,decimals=2)) + '_fit'
     f = open('fitting_solutions.txt','a') #'a' means solution will be appended to file if it exists, otherwise it will be created.
     now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M")
     if case == 0:
@@ -1001,8 +964,9 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
     np.savetxt(newmodel,np.transpose([alllambda,bestmodel]))
     chiname = 'chi_' + zzcetiblue[5:zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_' + marker + '.txt'
     np.savetxt(chiname,chis)
-    alphaname = 'chi_' + zzcetiblue[5:zzcetiblue.find(endpoint)] + '_alpha_' + now[5:10] + '_' + marker + '.txt'
-    np.savetxt(alphaname,chisalpha)
+    if redfile:
+        alphaname = 'chi_' + zzcetiblue[5:zzcetiblue.find(endpoint)] + '_alpha_' + now[5:10] + '_' + marker + '.txt'
+        np.savetxt(alphaname,chisalpha)
     betaname = 'chi_' + zzcetiblue[5:zzcetiblue.find(endpoint)] + '_beta_' + now[5:10] + '_' + marker + '.txt'
     np.savetxt(betaname,chisbeta)
     gammaname = 'chi_' + zzcetiblue[5:zzcetiblue.find(endpoint)] + '_gamma_' + now[5:10] + '_' + marker + '.txt'
