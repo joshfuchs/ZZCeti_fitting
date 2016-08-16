@@ -123,7 +123,7 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
 
        zzcetired: string, name of red spectrum, Used for saving new files
 
-       FWHM: float, observed FWHM in Angstroms of spectrum. Used for convolving the models
+       FWHM: 1D numpy array, observed FWHM in Angstroms of spectrum. Used for convolving the models.
 
        indices: 1D numpy array, indices to break up alllambda, allnline, and allsigma into individual balmer lines. Starts with highest order line and goes through H alpha.
 
@@ -231,13 +231,25 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         #Let the gaussian go out +/- 180 bins = +/- 18A > 9*sig
         #This seems to get all the light numerically
 
-        sig = FWHM / (2. * np.sqrt(2.*np.log(2.)))
+        #Interpolate the array of FWHM values so that we have a value at each 1/10th of Angstrom
+        interpfwhm = InterpolatedUnivariateSpline(lambdarange,FWHM,k=1)
+        intfwhm = interpfwhm(intlambda)
+        sig = intfwhm / (2. * np.sqrt(2.*np.log(2.)))
 
         #Gaussian with area normalized to 1
         #gw = 360.
         gx = np.divide(range(360),10.)
-        gauss = (1./(sig * np.sqrt(2. * np.pi))) * np.exp(-(gx-18.)**2./(2.*sig**2.))
-
+        length = len(intflux) - 360.
+        cflux = np.zeros(length)
+        clambda = intlambda[180:len(intlambda)-180]
+        
+        x  = 0
+        while x < length:
+            gauss = (1./(sig[x] * np.sqrt(2. * np.pi))) * np.exp(-(gx-18.)**2./(2.*sig[x]**2.))
+            tempintflux = intflux[x:x+360] #Only take fluxes +/- 18 Angstroms from central wavelength
+            gf = np.divide(tempintflux*gauss,10.) #Convolved gauss with intflux. Divide by 10 because below.
+            cflux[x] = np.sum(gf,dtype='d')
+            x += 1
         #To get an array with 361 columns and N_elements(intflux) rows,
         #we'd multiply gauss * intflux (column by row) and each row would contain the
         #Gaussian multiplied by the value of the flux, then, starting at the top right
@@ -248,25 +260,30 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         #equally spaced around its center, the 2D array will be symmetric, and this
         #won't matter.
         #Use np.outer for this
-
+        
         #Need to divide by 10, beacuse although the area under the Gaussian is 1, the
         #sum of the points of the Gaussian is 10x that because the points are spaced
         #at 1/10 of an Angstrom.
-
+        '''
+        print 'Starting with one value'
+        sig = sig[0]
+        gx = np.divide(range(360),10.)
+        gauss = (1./(sig * np.sqrt(2. * np.pi))) * np.exp(-(gx-18.)**2./(2.*sig**2.))
         gf = np.divide(np.outer(intflux,gauss),10.)
-
+        
         #Sum the diagonals to get the flux for each wavelength
         # Use np.diagonal. Want each sum to move down the matrix, so 
         #setting axis1 and axis2 so that happens.
         length = len(intflux) - 360.
-        cflux = np.zeros(length)
+        cflux2 = np.zeros(length)
         clambda = intlambda[180:len(intlambda)-180]
 
         x  = 0
         while x < length:
-            cflux[x] = np.sum(np.diagonal(gf,x,axis1=1,axis2=0),dtype='d')
+            cflux2[x] = np.sum(np.diagonal(gf,x,axis1=1,axis2=0),dtype='d')
             x += 1
-    
+        print 'Done with one value'
+        '''
         #plt.clf()
         #plt.plot(clambda,cflux,'bs',label='k=1')
         #plt.plot(clambda,cflux2,'r^',label='k=2')

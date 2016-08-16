@@ -163,7 +163,14 @@ else:
 datalistblue = pf.open(zzcetiblue)
 datavalblue = datalistblue[0].data[0,0,:] #Reads in the object spectrum,data[0,0,:] is optimally subtracted, data[1,0,:] is raw extraction,  data[2,0,:] is sky, data[3,0,:] is sigma spectrum
 sigmavalblue = datalistblue[0].data[3,0,:] #Sigma spectrum
-FWHMpix = datalistblue[0].header['specfwhm']
+
+#Read in FWHM of blue spectrum from header. Use one value only. If you change which one you use, don't forget to change it below too.
+#FWHMpixblue = datalistblue[0].header['specfwhm'] 
+#FWHMpixblue = FWHMpixblue * np.ones(len(datavalblue))
+
+#Read in FWHM of blue spectrum from npy binary file. Use changing values.
+findloc = zzcetiblue.find('_flux')
+FWHMpixblue = np.load(zzcetiblue[1:findloc]+'_poly.npy')
 
 '''
 #Linearized Wavelengths
@@ -197,6 +204,10 @@ if redfile:
     datalistred = pf.open(zzcetired)
     datavalred = datalistred[0].data[0,0,:] #data[0,0,:] is optimally extracted, data[2,0,:] is sky
     sigmavalred = datalistred[0].data[3,0,:] #Sigma spectrum
+    #FWHMpixred = datalistred[0].header['specfwhm'] 
+    #FWHMpixred = FWHMpixred * np.ones(len(datavalred))
+    findloc = zzcetired.find('_flux')
+    FWHMpixred = np.load(zzcetired[1:findloc]+'_poly.npy')
     '''
     #Linearized red wavelengths
     wav0red = datalistred[0].header['crval1']
@@ -225,23 +236,26 @@ if redfile:
     lambdasred = DispCalc(PixelsRed, alphared, thetared, frred, fdred, flred, zPntred)
 
 
-#FWHM = FWHMpix * deltawavblue #FWHM in Angstroms linearized
-FWHM = FWHMpix * (lambdasblue[-1] - lambdasblue[0])/nxblue #from grating equation
-
 #Concatenate both into two arrays
 if redfile:
     lambdas = np.concatenate((lambdasblue,lambdasred))
     dataval = np.concatenate((datavalblue,datavalred))
     sigmaval = np.concatenate((sigmavalblue,sigmavalred))#2.e-17 * np.ones(len(dataval)) small/big44./87.*
+    FWHM = (lambdasblue[-1] - lambdasblue[0])/nxblue * np.concatenate((FWHMpixblue,FWHMpixred)) #from grating equation
+    #FWHM = deltawavblue * np.concatenate((FWHMpixblue,FWHMpixred)) #FWHM in Angstroms linearized
 else:
     lambdas = np.array(lambdasblue)
     dataval = np.array(datavalblue)
     sigmaval = np.array(sigmavalblue)
+    FWHM = FWHMpixblue * (lambdasblue[-1] - lambdasblue[0])/nxblue #from grating equation
+    #FWHM = FWHMpixblue * deltawavblue #FWHM in Angstroms linearized
+
 
 #plot the spectrum
 #plt.clf()
 #plt.plot(lambdas,dataval,'k')
 #plt.plot(lambdas,sigmaval)
+#plt.plot(FWHM)
 #plt.show()
 #sys.exit()
 
@@ -1407,7 +1421,7 @@ else:
 
 ##### Save the normalized spectrum for later use
 now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M")
-marker = str(np.round(FWHM,decimals=2))
+marker = str(np.round(FWHM[0],decimals=2))
 endpoint = '.ms.'
 savespecname = 'norm_' + zzcetiblue[5:zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_' + marker + '.txt' 
 np.savetxt(savespecname,np.transpose([alllambda,allnline,allsigma]))
