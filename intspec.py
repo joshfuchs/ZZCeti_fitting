@@ -207,8 +207,10 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
             #to interpolate to speed things up. Again we will go a little beyond the region
             #we care about to minimize edge effects of the interpolation. Will use ~3600
             #to 6050
-            shortlambdas = lambdas[700:4300]
-            shortinten = inten[700:4300]
+            lowlambda = np.min(np.where(lambdas > 3600.))
+            highlambda = np.min(np.where(lambdas > 6800.))
+            shortlambdas = lambdas[lowlambda:highlambda]
+            shortinten = inten[lowlambda:highlambda]
 
             print 'Starting the 1D interpolation of the model'
             interp = InterpolatedUnivariateSpline(shortlambdas,shortinten,k=1)
@@ -232,6 +234,7 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         #This seems to get all the light numerically
 
         #Interpolate the array of FWHM values so that we have a value at each 1/10th of Angstrom
+        
         interpfwhm = InterpolatedUnivariateSpline(lambdarange,FWHM,k=1)
         intfwhm = interpfwhm(intlambda)
         sig = intfwhm / (2. * np.sqrt(2.*np.log(2.)))
@@ -250,6 +253,7 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
             gf = np.divide(tempintflux*gauss,10.) #Convolved gauss with intflux. Divide by 10 because below.
             cflux[x] = np.sum(gf,dtype='d')
             x += 1
+        
         #To get an array with 361 columns and N_elements(intflux) rows,
         #we'd multiply gauss * intflux (column by row) and each row would contain the
         #Gaussian multiplied by the value of the flux, then, starting at the top right
@@ -266,6 +270,7 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         #at 1/10 of an Angstrom.
         '''
         print 'Starting with one value'
+        sig = FWHM / (2. * np.sqrt(2.*np.log(2.)))
         sig = sig[0]
         gx = np.divide(range(360),10.)
         gauss = (1./(sig * np.sqrt(2. * np.pi))) * np.exp(-(gx-18.)**2./(2.*sig**2.))
@@ -275,12 +280,12 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         # Use np.diagonal. Want each sum to move down the matrix, so 
         #setting axis1 and axis2 so that happens.
         length = len(intflux) - 360.
-        cflux2 = np.zeros(length)
+        cflux = np.zeros(length)
         clambda = intlambda[180:len(intlambda)-180]
 
         x  = 0
         while x < length:
-            cflux2[x] = np.sum(np.diagonal(gf,x,axis1=1,axis2=0),dtype='d')
+            cflux[x] = np.sum(np.diagonal(gf,x,axis1=1,axis2=0),dtype='d')
             x += 1
         print 'Done with one value'
         '''
