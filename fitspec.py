@@ -35,12 +35,11 @@ Done:
 - automatically generate pseudo-gauss estimates for observed spectrum
 - Read in FWHM so that models are convolved correctly. 
 """
-#Based on fitspec.pro written by Bart Dunlap. Ported to python by Josh Fuchs
-#At the end of this program, it calls intspec.py to fit to the model. If you move
-#this file you need to move that file. Also, you will need to change the path
-#listed at the bottom. This program uses MPFIT to fit a pseudogaussian to the balmer lines of interest. Therefore you need to have mpfit.py in the same directory. You want to have the version written by Sergei Koposov as that is the most recent and uses numpy.
+#This program uses MPFIT to fit a pseudogaussian to the balmer lines of interest. Therefore you need to have mpfit.py in the same directory. You want to have the version written by Sergei Koposov as that is the most recent and uses numpy.
 
 import numpy as np
+#import matplotlib
+#matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import pyfits as pf # Infierno doesn't support astropy for some reason so using pyfits
@@ -151,9 +150,11 @@ def DispCalc(Pixels, alpha, theta, fr, fd, fl, zPnt):
 if len(sys.argv) == 3: 
     script, zzcetiblue, zzcetired = sys.argv
     redfile = True
+    print 'Now fitting %s and %s \n' % (zzcetiblue, zzcetired)
 elif len(sys.argv) == 2:
     script, zzcetiblue = sys.argv
     redfile = False
+    print 'Now fitting %s \n' % zzcetiblue
 else:
     print '\n Incorrect number of arguments. \n'
 
@@ -167,8 +168,8 @@ sigmavalblue = datalistblue[0].data[3,0,:] #Sigma spectrum
 #FWHMpixblue = FWHMpixblue * np.ones(len(datavalblue))
 
 #Read in FWHM of blue spectrum from npy binary file. Use changing values.
-findloc = zzcetiblue.find('_flux')
-FWHMpixblue = np.load(zzcetiblue[1:findloc]+'_poly.npy')
+FWHMbluefilename = zzcetiblue[0:zzcetiblue.find('w')] + zzcetiblue[zzcetiblue.find('t'):zzcetiblue.find('_flux')] + '_poly.npy'
+FWHMpixblue = np.load(FWHMbluefilename)
 
 '''
 #Linearized Wavelengths
@@ -204,8 +205,8 @@ if redfile:
     sigmavalred = datalistred[0].data[3,0,:] #Sigma spectrum
     #FWHMpixred = datalistred[0].header['specfwhm'] 
     #FWHMpixred = FWHMpixred * np.ones(len(datavalred))
-    findloc = zzcetired.find('_flux')
-    FWHMpixred = np.load(zzcetired[1:findloc]+'_poly.npy')
+    FWHMredfilename = zzcetired[0:zzcetired.find('w')] + zzcetired[zzcetired.find('t'):zzcetired.find('_flux')] + '_poly.npy'
+    FWHMpixred = np.load(FWHMredfilename)
     '''
     #Linearized red wavelengths
     wav0red = datalistred[0].header['crval1']
@@ -250,15 +251,15 @@ else:
 
 
 #plot the spectrum
-#plt.clf()
-#plt.plot(lambdas,dataval,'k')
+plt.clf()
+plt.plot(lambdas,dataval,'k')
 #plt.plot(lambdas,sigmaval)
 #plt.plot(FWHM)
 #plt.show()
 #sys.exit()
 
 #Save spectrum
-#np.savetxt('GD165_modelflux.txt',np.transpose([lambdas,dataval,sigmaval]))
+#np.savetxt('VPHAS1813-2138_spectrum.txt',np.transpose([lambdas,dataval,sigmaval]))
 
 #First define the fitting and normalization wavelengths,
 # Then sets pixel range using those points
@@ -295,36 +296,49 @@ helevenwavelengthlow = 3757.
 helevenwavelengthhigh = 3785.
 '''
 #Wavelengths for possible ELM fitting
-#Mask out Calcium line
-callow = np.min(np.where(lambdas > 3924.))
-calhigh =  np.min(np.where(lambdas > 3940.))
-lambdas = np.concatenate((lambdas[0:callow],lambdas[calhigh:]))
-dataval = np.concatenate((dataval[0:callow],dataval[calhigh:]))
-sigmaval = np.concatenate((sigmaval[0:callow],sigmaval[calhigh:]))
+#plt.clf()
+#plt.plot(lambdas,dataval)
+#plt.show()
+#Mask out Calcium line and others
+features_to_mask = [[3920,3940],[4016,4036],[4911,4938]]
+mask = lambdas == lambdas
+for waverange in features_to_mask:
+    inds = np.where((lambdas > waverange[0]) & (lambdas < waverange[1]))
+    mask[inds] = False
+                    
+lambdas = lambdas[mask]
+dataval = dataval[mask]
+sigmaval = sigmaval[mask]
+FWHM = FWHM[mask]
 
+#plt.plot(lambdas,dataval-1e-14)
+#plt.show()
+#exit()
 
 betafitwavelengthlow = 4680. #4680
-betafitwavelengthhigh = 5040. #5040
-betanormwavelengthlow = 4742. #4721
-betanormwavelengthhigh = 4982. #5001
+betafitwavelengthhigh = 4961. #5040
+betanormwavelengthlow = 4812. #4721
+betanormwavelengthhigh = 4911. #4982
 
 gammafitwavelengthlow = 4200. #4200
-gammafitwavelengthhigh = 4520. #4510
-gammanormwavelengthlow = 4291. #4220
-gammanormwavelengthhigh = 4411. #4460
+gammafitwavelengthhigh = 4380. #4510
+gammanormwavelengthlow = 4281. #4291
+gammanormwavelengthhigh = 4374. #4411
 
-highwavelengthlow = 3782.
+highwavelengthlow = 3755.
 highwavelenghthigh = 4222. #4191 
 deltawavelengthlow = 4052. #4031
-deltawavelengthhigh = 4202. #4191
+deltawavelengthhigh = 4152. #4191
 epsilonwavelengthlow = 3940. #3925
-epsilonwavelengthhigh = 4021. # 4030
+epsilonwavelengthhigh = 4007. # 4021
 heightwavelengthlow = 3865. #3859
-heightwavelengthhigh = 3922. # 3925
+heightwavelengthhigh = 3920. # 3925
 hninewavelengthlow = 3815. #3815
 hninewavelengthhigh = 3855. #3855
 htenwavelengthlow = 3785. #3785
 htenwavelengthhigh = 3815. #3815
+helevenwavelengthlow = 3757.
+helevenwavelengthhigh = 3785.
 '''
 #Find indices for normalization
 if redfile:
@@ -528,68 +542,72 @@ hest[22] = 1.2 #how much of a pseudo-gaussian
 #hest[25] = 5. #NEED TO CHECK THIS
 #hest[26] = 1. #how much of a pseudo-gaussian
 '''
-
+'''
 #########################
 #Fit gamma through 11
 highwavelengthlow = 3755. #3782 for H10 and 3755 for H11
 hlow = np.min(np.where(lambdas > highwavelengthlow)) 
 
-biglambdas = lambdas[hlow:gfithi+1]
-bigval = dataval[hlow:gfithi+1]
-bigsig = sigmaval[hlow:gfithi+1]
+hlambdas = lambdas[hlow:gfithi+1]
+hval = dataval[hlow:gfithi+1]
+hsig = sigmaval[hlow:gfithi+1]
 
 
-bigest = np.zeros(32)
+bigest = np.zeros(32) #Array for guess parameters
+'''
+'''
+#Best fit parameters from GD 165 on 2015-04-26
+bigest[0] = -1.41357212e+05
+bigest[1] = 1.02070253e+02
+bigest[2] = -2.43244563e-02
+bigest[3] = 1.92248498e-06
+bigpp = np.poly1d([bigest[3],bigest[2],bigest[1],bigest[0]])
+bigest[4] = -3.96618275e+02
+bigest[5] = 4.34090612e+03
+bigest[6] = 2.64573080e+01
+bigest[7] = 1.00480981e+00
+bigest[8] = -4.88251832e+02
+bigest[9] = 4.10262307e+03
+bigest[10] = 2.77876123e+01
+bigest[11] = 9.66143639e-01
+bigest[12] = -4.48296148e+02
+bigest[13] = 3.97136338e+03
+bigest[14] = 2.30877387e+01
+bigest[15] = 1.09539929e+00
+bigest[16] = -3.60256002e+02
+bigest[17] = 3.88986126e+03
+bigest[18] = 1.98910307e+01
+bigest[19] = 1.22023094e+00
+bigest[20] = -2.18227322e+02
+bigest[21] = 3.83618537e+03
+bigest[22] = 1.63076240e+01
+bigest[23] = 1.37277188e+00
+bigest[24] = -5.94775596e+01
+bigest[25] = 3.80089099e+03
+bigest[26] = 8.80022809e+00
+bigest[27] = 2.18181124e+00
+bigest[28] = -2.33480022e+02
+bigest[29] = 3.77059291e+03
+bigest[30] = 3.98766671e+01
+bigest[31] = 1.63020905e+00
+'''
+'''
+#Guess for the continuum
 xes = np.array([lambdas[H10low],lambdas[H9low],lambdas[H8low],lambdas[elow],lambdas[dlow],lambdas[dhi],lambdas[glow],lambdas[ghi]])
 yes = np.array([dataval[H10low],dataval[H9low],dataval[H8low],dataval[elow],dataval[dlow],dataval[dhi],dataval[glow],dataval[ghi]])
 yes += dataval[H10low]/30. #Trying an offset to make sure the continuum is above the lines
 bigp = np.polyfit(xes,yes,3)
-#bigpp = np.poly1d(bigp)
-#bigest[0] = bigp[3]
-#bigest[1] = bigp[2]
-#bigest[2] = bigp[1]
-#bigest[3] = bigp[0]
-bigest[0] = -3.85045934e+04
-bigest[1] = 2.73530286e+01
-bigest[2] = -6.42031052e-03
-bigest[3] = 5.00111153e-07
-bigpp = np.poly1d([bigest[3],bigest[2],bigest[1],bigest[0]])
+bigpp = np.poly1d(bigp)
+bigest[0] = bigp[3]
+bigest[1] = bigp[2]
+bigest[2] = bigp[1]
+bigest[3] = bigp[0]
+#bigest[0] = -3.85045934e+04
+#bigest[1] = 2.73530286e+01
+#bigest[2] = -6.42031052e-03
+#bigest[3] = 5.00111153e-07
+#bigpp = np.poly1d([bigest[3],bigest[2],bigest[1],bigest[0]])
 
-#Best fit parameters from GD 165 on 2015-04-26
-bigest[0] = -3.84522589e+04
-bigest[1] = 2.74156628e+01
-bigest[2] = -6.45800956e-03
-bigest[3] = 5.04803246e-07
-bigpp = np.poly1d([bigest[3],bigest[2],bigest[1],bigest[0]])
-bigest[4] = -1.01835175e+02
-bigest[5] = 4.34132142e+03
-bigest[6] = 2.74026159e+01
-bigest[7] = 9.80555011e-01
-bigest[8] = -1.21529581e+02
-bigest[9] = 4.10315634e+03
-bigest[10] = 2.69312025e+01
-bigest[11] = 9.69075709e-01
-bigest[12] = -1.07940539e+02
-bigest[13] = 3.97179412e+03
-bigest[14] = 2.17314824e+01
-bigest[15] = 1.11437112e+00
-bigest[16] = -8.51004764e+01
-bigest[17] = 3.89048754e+03
-bigest[18] = 1.89710858e+01
-bigest[19] = 1.19599159e+00
-bigest[20] = -5.02619807e+01
-bigest[21] = 3.83652115e+03
-bigest[22] = 1.58746830e+01
-bigest[23] = 1.36144245e+00
-bigest[24] = -1.46885033e+01
-bigest[25] = 3.80134470e+03
-bigest[26] = 9.11367620e+00
-bigest[27] = 2.16256879e+00
-bigest[28] = -4.40786818e+01
-bigest[29] = 3.77352824e+03
-bigest[30] = 3.76546260e+01
-bigest[31] =1.50066794e+00
-'''
 #Gamma
 bigest[4] = np.min(dataval[glow:ghi+1]) - bigpp(4341.692) #depth of line relative to continuum
 bigest[5] = 4341.692 #rest wavelength of H gamma
@@ -660,73 +678,92 @@ H11lowidx = H11diff[np.where(H11lambdas < 3770.6)].argmin()
 H11highidx = H11diff[np.where(H11lambdas > 3770.6)].argmin() + len(H11diff[np.where(H11lambdas < 3770.6)])
 bigest[30] = (H11lambdas[H11highidx] - H11lambdas[H11lowidx]) / (2.*np.sqrt(2.*np.log(2.)))
 bigest[31] = 1.2 #how much of a pseudo-gaussian
-'''
 
-bigfa = {'x':biglambdas, 'y':bigval, 'err':bigsig}
-bigparams = mpfit.mpfit(fitbigpseudogauss,bigest,functkw=bigfa,maxiter=200,ftol=1e-12,xtol=1e-8,quiet=True)
-print bigparams.status, bigparams.niter, bigparams.fnorm, bigparams.dof, bigparams.fnorm/bigparams.dof
-bigfit = bigpseudogauss(biglambdas,bigparams.params)
 
-bigguess = bigpseudogauss(biglambdas,bigest)
+#Constrain width of H11 pseudogaussian to be smaller than H10 pseudogaussian
+paraminfo = [{'limits':[0,0],'limited':[0,0]} for i in range(32)]
+#paraminfo[27]['limited'] = [0,1]
+#paraminfo[27]['limits'] = [0,3.]
+
+bigfa = {'x':hlambdas, 'y':hval, 'err':hsig}
+hparams = mpfit.mpfit(fitbigpseudogauss,bigest,functkw=bigfa,maxiter=200,ftol=1e-12,xtol=1e-8,parinfo=paraminfo,quiet=True)
+print hparams.status, hparams.niter, hparams.fnorm, hparams.dof, hparams.fnorm/hparams.dof
+hfit = bigpseudogauss(hlambdas,hparams.params)
+
+bigguess = bigpseudogauss(hlambdas,bigest)
 
 #compute reduced chi-square for gamma through 10
-low2 = np.min(np.where(biglambdas > 3782.)) 
-high2 =  np.min(np.where(biglambdas > 4510.))
+low2 = np.min(np.where(hlambdas > 3782.)) 
+high2 =  np.min(np.where(hlambdas > 4378.))
 
-chisquare2 = np.sum(((bigval[low2:high2+1]-bigfit[low2:high2+1]) / bigsig[low2:high2+1])**2.,dtype='d')
-dof2 = float(len(bigval[low2:high2+1])) - 28.
+chisquare2 = np.sum(((hval[low2:high2+1]-hfit[low2:high2+1]) / hsig[low2:high2+1])**2.,dtype='d')
+dof2 = float(len(hval[low2:high2+1])) - 28.
 
-chisquare3 = np.sum(((bigval-bigfit) / bigsig)**2.,dtype='d')
-dof3 = float(len(bigval)) - 32.
+chisquare3 = np.sum(((hval-hfit) / hsig)**2.,dtype='d')
+dof3 = float(len(hval)) - 32.
 
 #print chisquare3, dof3, chisquare3/dof3
 #print chisquare2, dof2, chisquare2/dof2
 
-
-#print bigest
-print bigparams.params
-plt.clf()
-plt.plot(biglambdas,bigval,'b')
-plt.plot(biglambdas,bigpp(biglambdas),'g')
-plt.plot(biglambdas,bigguess,'g')
-plt.plot(biglambdas,bigfit,'r')
-plt.plot(biglambdas,bigparams.params[0] + bigparams.params[1]*biglambdas + bigparams.params[2]*biglambdas**2. + bigparams.params[3]*biglambdas**3.,'r')
-bigparams.params[0] = 0.
-bigparams.params[1] = 0.
-bigparams.params[2] = 0.
-bigparams.params[3] = 0.
-plt.plot(biglambdas,bigpseudogauss(biglambdas,bigparams.params),'k')
-plt.plot(biglambdas,bigparams.params[4]*np.exp(-(np.abs(biglambdas-bigparams.params[5])/(np.sqrt(2.)*bigparams.params[6]))**bigparams.params[7]),'c')
-plt.plot(biglambdas,bigparams.params[20]*np.exp(-(np.abs(biglambdas-bigparams.params[21])/(np.sqrt(2.)*bigparams.params[22]))**bigparams.params[23]),'c')
-plt.plot(biglambdas,25.+bigest[4]*np.exp(-(np.abs(biglambdas-bigest[5])/(np.sqrt(2.)*bigest[6]))**bigest[7]),'c')
-plt.plot(biglambdas,25.+bigest[20]*np.exp(-(np.abs(biglambdas-bigest[21])/(np.sqrt(2.)*bigest[22]))**bigest[23]),'c')
-
-
-#plt.show()
-
+#Get line centers
+gcenter = hparams.params[5]
+dcenter = hparams.params[9]
+ecenter = hparams.params[13]
+H8center = hparams.params[17]
+H9center = hparams.params[21]
+H10center = hparams.params[25]
 '''
+'''
+#Redefine these variables for quick switching of methods
+glambdas = hlambdas
+gamval = hval
+gsigmas = hsig
+gamfit = hfit
+'''
+'''
+#print bigest
+print hparams.params
+plt.clf()
+plt.plot(hlambdas,hval,'b')
+plt.plot(hlambdas,bigpp(hlambdas),'g')
+plt.plot(hlambdas,bigguess,'g')
+plt.plot(hlambdas,hfit,'r')
+plt.plot(hlambdas,hparams.params[0] + hparams.params[1]*hlambdas + hparams.params[2]*hlambdas**2. + hparams.params[3]*hlambdas**3.,'r')
+#plt.plot(hlambdas,hval-hfit+(hfit.min()-15.),'k')
+#bigparams.params[0] = 0.
+#bigparams.params[1] = 0.
+#bigparams.params[2] = 0.
+#bigparams.params[3] = 0.
+#plt.plot(biglambdas,bigpseudogauss(biglambdas,bigparams.params),'k')
+#plt.plot(biglambdas,bigparams.params[4]*np.exp(-(np.abs(biglambdas-bigparams.params[5])/(np.sqrt(2.)*bigparams.params[6]))**bigparams.params[7]),'c')
+#plt.plot(biglambdas,bigparams.params[20]*np.exp(-(np.abs(biglambdas-bigparams.params[21])/(np.sqrt(2.)*bigparams.params[22]))**bigparams.params[23]),'c')
+#plt.plot(biglambdas,25.+bigest[4]*np.exp(-(np.abs(biglambdas-bigest[5])/(np.sqrt(2.)*bigest[6]))**bigest[7]),'c')
+#plt.plot(biglambdas,25.+bigest[20]*np.exp(-(np.abs(biglambdas-bigest[21])/(np.sqrt(2.)*bigest[22]))**bigest[23]),'c')
+
+plt.show()
+
 now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M")
 endpoint = '.ms.'
 savefitspec = 'fit_' + zzcetiblue[5:zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_H11.pdf'
 fitpdf = PdfPages(savefitspec)
 plt.clf()
-plt.plot(biglambdas,bigval,'b')
-plt.plot(biglambdas,bigguess,'g')
-plt.plot(biglambdas,bigpp(biglambdas),'g')
+plt.plot(hlambdas,hval,'b')
+plt.plot(hlambdas,bigguess,'g')
+plt.plot(hlambdas,bigpp(hlambdas),'g')
 plt.title('Guess')
 fitpdf.savefig()
 plt.clf()
-plt.plot(biglambdas,bigval,'b')
-plt.plot(biglambdas,bigfit,'r')
-plt.plot(biglambdas,bigparams.params[0] + bigparams.params[1]*biglambdas + bigparams.params[2]*biglambdas**2. + bigparams.params[3]*biglambdas**3.,'r')
+plt.plot(hlambdas,hval,'b')
+plt.plot(hlambdas,hfit,'r')
+plt.plot(hlambdas,hparams.params[0] + hparams.params[1]*hlambdas + hparams.params[2]*hlambdas**2. + hparams.params[3]*hlambdas**3.,'r')
 #plt.title(np.round(hparams.fnorm/hparams.dof,decimals=4))
 plt.title(np.round(chisquare2/dof2,decimals=4))
 fitpdf.savefig()
 fitpdf.close()
-'''
+
 
 #sys.exit()
-
+'''
 ########################
 #########################
 
@@ -739,52 +776,56 @@ hval = dataval[hlow:gfithi+1]
 hsig = sigmaval[hlow:gfithi+1]
 
 bigest = np.zeros(28)
+
+#Guesses from GD 165: 2015-04-26
+bigest[0] = -1.41159057e+05
+bigest[1] = 1.00443047e+02
+bigest[2] = -2.36076932e-02
+bigest[3] = 1.84139110e-06
+bigpp = np.poly1d([bigest[3],bigest[2],bigest[1],bigest[0]])
+bigest[4] = -4.06035255e+02
+bigest[5] = 4.34092583e+03
+bigest[6] = 2.72522312e+01
+bigest[7] = 9.83112306e-01
+bigest[8] = -4.78134615e+02
+bigest[9] = 4.10272287e+03
+bigest[10] = 2.69840743e+01
+bigest[11] = 9.61424635e-01
+bigest[12] = -4.11042483e+02
+bigest[13] = 3.97149906e+03
+bigest[14] = 2.08403895e+01
+bigest[15] = 1.14000247e+00
+bigest[16] = -3.07128449e+02
+bigest[17] = 3.88991856e+03
+bigest[18] = 1.76330401e+01
+bigest[19] = 1.22352091e+00
+bigest[20] = -1.48658941e+02
+bigest[21] = 3.83730915e+03
+bigest[22] = 1.14755484e+01
+bigest[23] = 1.42376957e+00
+bigest[24] = -1.78719907e+02
+bigest[25] = 3.79796636e+03
+bigest[26] = 3.30098176e+01
+bigest[27] = 1.07062679e+00
+
+'''
+#Guess for continuum
 xes = np.array([lambdas[H10low],lambdas[H9low],lambdas[H8low],lambdas[elow],lambdas[dlow],lambdas[dhi],lambdas[glow],lambdas[ghi]])
 yes = np.array([dataval[H10low],dataval[H9low],dataval[H8low],dataval[elow],dataval[dlow],dataval[dhi],dataval[glow],dataval[ghi]])
 yes += dataval[H10low]/30. #offset to make sure the continuum is above the lines
 bigp = np.polyfit(xes,yes,3)
-#bigpp = np.poly1d(bigp)
-#bigest[0] = bigp[3]
-#bigest[1] = bigp[2]
-#bigest[2] = bigp[1]
-#bigest[3] = bigp[0]
-#bigest[0] = -3.85045934e+04
-#bigest[1] = 2.73530286e+01
-#bigest[2] = -6.42031052e-03
-#bigest[3] = 5.00111153e-07
+bigpp = np.poly1d(bigp)
+bigest[0] = bigp[3]
+bigest[1] = bigp[2]
+bigest[2] = bigp[1]
+bigest[3] = bigp[0]
+#bigest[0] = -1.41210158e+05
+#bigest[1] = 1.02004150e+02
+#bigest[2] = -2.43173657e-02
+#bigest[3] = 1.92255983e-06
 #bigpp = np.poly1d([bigest[3],bigest[2],bigest[1],bigest[0]])
-#Guesses from GD 165: 2015-04-26
-bigest[0] = -3.84128618e+04
-bigest[1] = 2.72946814e+01
-bigest[2] = -6.40873191e-03
-bigest[3] = 4.99395006e-07
-bigpp = np.poly1d([bigest[3],bigest[2],bigest[1],bigest[0]])
-bigest[4] = -1.02335842e+02
-bigest[5] = 4.34132999e+03
-bigest[6] = 2.75809036e+01
-bigest[7] = 9.76518496e-01
-bigest[8] = -1.20680847e+02
-bigest[9] = 4.10318283e+03
-bigest[10] = 2.66780355e+01
-bigest[11] = 9.69172807e-01
-bigest[12] = -1.04893750e+02
-bigest[13] = 3.97187206e+03
-bigest[14] = 2.09911712e+01
-bigest[15] = 1.12594534e+00
-bigest[16] = -7.78341362e+01
-bigest[17] = 3.89048115e+03
-bigest[18] = 1.77855316e+01
-bigest[19] = 1.19600410e+00
-bigest[20] = -3.65519017e+01
-bigest[21] = 3.83776768e+03
-bigest[22] = 1.17201862e+01
-bigest[23] = 1.36413385e+00
-bigest[24] = -4.73030095e+01
-bigest[25] = 3.79822182e+03
-bigest[26] = 3.76342050e+01
-bigest[27] = 1.10699267e+00
 
-'''
+
 bigest[4] = np.min(dataval[glow:ghi+1]) - bigpp(4341.692) #depth of line relative to continuum
 bigest[5] = 4341.692 #rest wavelength of H gamma
 ghalfmax = bigpp(4341.69) + bigest[4]/2.0
@@ -879,20 +920,21 @@ bigguess = bigpseudogaussgamma(hlambdas,bigest)
 
 #Compute chi-square values for sections
 gfitlow2 = np.min(np.where(hlambdas > 4200.))
-gfithi2 = np.min(np.where(hlambdas > 4510.))
+gfithi2 = np.min(np.where(hlambdas > 4378.))
 hlow2 = np.min(np.where(hlambdas > 3778.)) 
 hhi2 = np.min(np.where(hlambdas > 4195.)) 
 
 
 #plt.clf()
-plt.plot(hlambdas,hval,'b')
+#plt.plot(hlambdas,hval,'b')
 #plt.plot(biglambdas,bigpp(biglambdas),'r')
-plt.plot(hlambdas,bigguess,'g')
-plt.plot(hlambdas,bigpp(hlambdas),'g')
-plt.plot(hlambdas,hfit,'r')
-plt.plot(hlambdas,hparams.params[0] + hparams.params[1]*hlambdas + hparams.params[2]*hlambdas**2. + hparams.params[3]*hlambdas**3.,'r')
+#plt.plot(hlambdas,bigguess,'g')
+#plt.plot(hlambdas,bigpp(hlambdas),'g')
+#plt.plot(hlambdas,hfit,'r')
+#plt.plot(hlambdas,hparams.params[0] + hparams.params[1]*hlambdas + hparams.params[2]*hlambdas**2. + hparams.params[3]*hlambdas**3.,'r')
 #plt.title(np.round(hparams.fnorm/hparams.dof,decimals=4))
 #plt.show()
+
 '''
 #Save the pseudogaussian fits to the spectrum as a pdf
 now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M")
@@ -912,9 +954,10 @@ plt.plot(hlambdas,hparams.params[0] + hparams.params[1]*hlambdas + hparams.param
 plt.title(np.round(hparams.fnorm/hparams.dof,decimals=4))
 fitpdf.savefig()
 fitpdf.close()
-'''
+
 
 sys.exit()
+'''
 ##########################################33
 
 
@@ -1164,9 +1207,9 @@ if redfile:
     
     #plt.clf()
     #plt.plot(alambdasnew,anline)
-    plt.plot(alambdas[anormlow],alphafit[anormlow],'g^')
-    plt.plot(alambdas[anormhi],alphafit[anormhi],'g^')
-    plt.plot(alambdasnew,ali,'g')
+    #plt.plot(alambdas[anormlow],alphafit[anormlow],'g^')
+    #plt.plot(alambdas[anormhi],alphafit[anormhi],'g^')
+    #plt.plot(alambdasnew,ali,'g')
     #plt.show()
     #sys.exit()
 
@@ -1191,9 +1234,9 @@ bsigma = bsigmasnew / bli
 
 #plt.clf()
 #plt.plot(blambdasnew,bnline)
-plt.plot(blambdas[bnormlow],betafit[bnormlow],'g^')
-plt.plot(blambdas[bnormhi],betafit[bnormhi],'g^')
-plt.plot(blambdasnew,bli,'g')
+#plt.plot(blambdas[bnormlow],betafit[bnormlow],'g^')
+#plt.plot(blambdas[bnormhi],betafit[bnormhi],'g^')
+#plt.plot(blambdasnew,bli,'g')
 #plt.show()
 #sys.exit()
 
@@ -1215,9 +1258,9 @@ gammavariation = np.sum((gamfit[gnormlow:gnormhi+1] - gamval[gnormlow:gnormhi+1]
 
 #plt.clf()
 #plt.plot(glambdasnew,gnline)
-plt.plot(glambdas[gnormlow],gamfit[gnormlow],'g^')
-plt.plot(glambdas[gnormhi],gamfit[gnormhi],'g^')
-plt.plot(glambdasnew,gli,'g')
+#plt.plot(glambdas[gnormlow],gamfit[gnormlow],'g^')
+#plt.plot(glambdas[gnormhi],gamfit[gnormhi],'g^')
+#plt.plot(glambdasnew,gli,'g')
 #plt.show()
 #sys.exit()
 
@@ -1233,9 +1276,9 @@ dsigtemp = sigmaval[hlow:gfithi+1]
 dnline = dvaltemp[dnormlow:dnormhi+1] / dli
 dsigma = dsigtemp[dnormlow:dnormhi+1] / dli
 
-plt.plot(hlambdastemp[dnormlow],hfit[dnormlow],'g^')
-plt.plot(hlambdastemp[dnormhi],hfit[dnormhi],'g^')
-plt.plot(dlambdas,dli,'g')
+#plt.plot(hlambdastemp[dnormlow],hfit[dnormlow],'g^')
+#plt.plot(hlambdastemp[dnormhi],hfit[dnormhi],'g^')
+#plt.plot(dlambdas,dli,'g')
 
 #elambdas = elambdas - (ecenter-3971.198)
 hlambdastemp = hlambdas - (ecenter-3971.1751)
@@ -1249,9 +1292,9 @@ esigtemp = sigmaval[hlow:hhi+1]
 enline = evaltemp[enormlow:enormhi+1] / eli
 esigma = esigtemp[enormlow:enormhi+1] / eli
 
-plt.plot(hlambdastemp[enormlow],hfit[enormlow],'g^')
-plt.plot(hlambdastemp[enormhi],hfit[enormhi],'g^')
-plt.plot(elambdas,eli,'g')
+#plt.plot(hlambdastemp[enormlow],hfit[enormlow],'g^')
+#plt.plot(hlambdastemp[enormhi],hfit[enormhi],'g^')
+#plt.plot(elambdas,eli,'g')
 
 #H8lambdas = H8lambdas - (H8center-3890.166)
 hlambdastemp = hlambdas - (H8center-3890.1461)
@@ -1265,9 +1308,9 @@ H8sigtemp = sigmaval[hlow:hhi+1]
 H8nline = H8valtemp[H8normlow:H8normhi+1] / H8li
 H8sigma = H8sigtemp[H8normlow:H8normhi+1] / H8li
 
-plt.plot(hlambdastemp[H8normlow],hfit[H8normlow],'g^')
-plt.plot(hlambdastemp[H8normhi],hfit[H8normhi],'g^')
-plt.plot(H8lambdas,H8li,'g')
+#plt.plot(hlambdastemp[H8normlow],hfit[H8normlow],'g^')
+#plt.plot(hlambdastemp[H8normhi],hfit[H8normhi],'g^')
+#plt.plot(H8lambdas,H8li,'g')
 
 ### To normalize, using points from end of region since it is so small.
 #H9lambdas = H9lambdas - (H9center- 3836.485)
@@ -1282,9 +1325,9 @@ H9sigtemp = sigmaval[hlow:hhi+1]
 H9nline = H9valtemp[H9normlow:H9normhi+1] / H9li
 H9sigma = H9sigtemp[H9normlow:H9normhi+1] / H9li
 
-plt.plot(hlambdastemp[H9normlow],hfit[H9normlow],'g^')
-plt.plot(hlambdastemp[H9normhi],hfit[H9normhi],'g^')
-plt.plot(H9lambdas,H9li,'g')
+#plt.plot(hlambdastemp[H9normlow],hfit[H9normlow],'g^')
+#plt.plot(hlambdastemp[H9normhi],hfit[H9normhi],'g^')
+#plt.plot(H9lambdas,H9li,'g')
 
 #H10lambdas = H10lambdas - (H10center-3797.909)
 hlambdastemp = hlambdas - (H10center-3798.9799)
@@ -1298,9 +1341,9 @@ H10sigtemp = sigmaval[hlow:hhi+1]
 H10nline = H10valtemp[H10normlow:H10normhi+1] / H10li
 H10sigma = H10sigtemp[H10normlow:H10normhi+1] / H10li
 
-plt.plot(hlambdastemp[H10normlow],hfit[H10normlow],'g^')
-plt.plot(hlambdastemp[H10normhi],hfit[H10normhi],'g^')
-plt.plot(H10lambdas,H10li,'g')
+#plt.plot(hlambdastemp[H10normlow],hfit[H10normlow],'g^')
+#plt.plot(hlambdastemp[H10normhi],hfit[H10normhi],'g^')
+#plt.plot(H10lambdas,H10li,'g')
 
 #======================================
 #Normalize by averaging continuum points and pseudogaussians for centers
@@ -1601,13 +1644,13 @@ else:
 now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M")
 marker = str(np.round(FWHM[0],decimals=2))
 endpoint = '.ms.'
-savespecname = 'norm_' + zzcetiblue[5:zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_' + marker + '.txt'
+savespecname = 'norm_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_' + marker + '.txt'
 header = 'Normalized spectrum. Columns: wavelength, normalized flux, sigma' 
 np.savetxt(savespecname,np.transpose([alllambda,allnline,allsigma]),header=header)
 
 #Save the guesses and best-fitting parameters for the pseudogaussians
 #aest,best,bigest for guesses and aparams.params, bparams.params, hparams.params
-savefitparams = 'params_' + zzcetiblue[5:zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_' + marker + '.txt'
+savefitparams = 'params_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_' + marker + '.txt'
 saveparams = np.zeros([len(bigest),6])
 saveparams[0:len(best),1] = best
 saveparams[0:len(bigest),2] = bigest
@@ -1621,26 +1664,35 @@ header = 'Guesses and best-fitting parameters from pseudogaussian fits to spectr
 np.savetxt(savefitparams,saveparams,header=header)
 
 #Save the pseudogaussian fits to the spectrum as a pdf
-savefitspec = 'fit_' + zzcetiblue[5:zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_' + marker + '.pdf'
+savefitspec = 'fit_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_' + marker + '.pdf'
 fitpdf = PdfPages(savefitspec)
 if redfile:
     plt.clf()
     plt.plot(alambdas,alphaval,'b')
     plt.plot(alambdas,alphafit,'r')
+    axes = plt.gca()
+    ymin, ymax = axes.get_ylim()
+    plt.plot(alambdas,alphaval-alphafit + (alphafit.min()+ymin)/2.,'k')
     plt.title(np.round(aparams.fnorm/aparams.dof,decimals=4))
     fitpdf.savefig()
 plt.clf()
 plt.plot(blambdas,betaval,'b')
 plt.plot(blambdas,betafit,'r')
+axes = plt.gca()
+ymin, ymax = axes.get_ylim()
+plt.plot(blambdas,betaval-betafit + (betafit.min()+ymin)/2.,'k')
 plt.title(np.round(bparams.fnorm/bparams.dof,decimals=4))
 fitpdf.savefig()
 plt.clf()
 plt.plot(hlambdas,hval,'b')
 plt.plot(hlambdas,hfit,'r')
+axes = plt.gca()
+ymin, ymax = axes.get_ylim()
+plt.plot(hlambdas,hval-hfit + (hfit.min()+ymin)/2.,'k')
 plt.title(np.round(hparams.fnorm/hparams.dof,decimals=4))
 fitpdf.savefig()
 fitpdf.close()
-#sys.exit()
+
 
 #=================
 #Run the spectrum through the coarse grid
@@ -1650,12 +1702,10 @@ if not redfile:
 
 print "Starting intspec.py now "
 case = 0 #We'll be interpolating Koester's raw models
-filenames = 'modelnames.txt'
+filenames = 'shortlist.txt'
 path = '/afs/cas.unc.edu/depts/physics_astronomy/clemens/students/group/modelfitting/Koester_06'
-#ncflux,bestT,bestg = intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path,marker,redfile)
-#print bestT,bestg
-bestT, bestg = 11500, 750
-#sys.exit()
+ncflux,bestT,bestg = intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path,marker,redfile)
+sys.exit()
 
 
 #================

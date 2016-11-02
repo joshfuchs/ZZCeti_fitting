@@ -135,6 +135,7 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
 
 
     print 'Starting to run intspec.py'
+    data_directory = os.getcwd()
     lambdarange = lambdas #This is the full wavelength range from blue and red setups.
     if case == 0:
         os.chdir(path)
@@ -878,9 +879,6 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         #plt.plot(alllambda,ncflux,'b^')
         #plt.show()
 
-        #newfilename = 'da_norm_' + str(logg) + '_' + str(teff) + '.txt'
-        #np.savetxt(newfilename,np.transpose([alllambda,ncflux]))
-
         #Get the observed fluxes and sigma for each line so that we can compute chi square for each line individually
         if redfile:
             obsalpha = allnline[indices[14]:+indices[15]+1]
@@ -903,8 +901,10 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         obs10sig = allsigma[indices[0]:indices[1]+1]
  
         #Save interpolated and normalized model
-        #intmodelname = 'da' + str(teff) + '_' + str(logg) + zzcetiblue[5:zzcetiblue.find('.ms.')] + '_' + str(np.round(FWHM,decimals=2)) + '_norm.txt'
-        #np.savetxt(intmodelname,np.transpose([alllambda,ncflux]))
+        #os.chdir(data_directory)
+        intmodelname = 'da' + str(teff) + '_' + str(logg) + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find('.ms.')] + '_' + str(np.round(FWHM[0],decimals=2)) + '_norm.txt'
+        np.savetxt(intmodelname,np.transpose([alllambda,ncflux]))
+        #os.chdir(path)
 
         #Calculate residuals and chi-square
         if n == 0:
@@ -971,6 +971,7 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
     deltachi = np.subtract(chis,bestchi)
     
     #Save information on best fitting model and the convolved model itself
+    os.chdir(data_directory)
     f = open('fitting_solutions.txt','a') #'a' means solution will be appended to file if it exists, otherwise it will be created.
     now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M")
     if case == 0:
@@ -982,30 +983,30 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
     f.close()
     #Now save the best convolved model and delta chi squared surface
     endpoint = '.ms.' #For shorter names, use '_930'
-    newmodel = 'model_' + zzcetiblue[5:zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_' + marker + '.txt' #NEED TO CHECK THIS TO MAKE SURE IT WORKS GENERALLY
+    newmodel = 'model_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_' + marker + '.txt' #NEED TO CHECK THIS TO MAKE SURE IT WORKS GENERALLY
     np.savetxt(newmodel,np.transpose([alllambda,bestmodel]))
-    chiname = 'chi_' + zzcetiblue[5:zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_' + marker + '.txt'
+    chiname = 'chi_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_' + marker + '.txt'
     np.savetxt(chiname,chis)
     if redfile:
-        alphaname = 'chi_' + zzcetiblue[5:zzcetiblue.find(endpoint)] + '_alpha_' + now[5:10] + '_' + marker + '.txt'
+        alphaname = 'chi_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_alpha_' + now[5:10] + '_' + marker + '.txt'
         np.savetxt(alphaname,chisalpha)
-    betaname = 'chi_' + zzcetiblue[5:zzcetiblue.find(endpoint)] + '_beta_' + now[5:10] + '_' + marker + '.txt'
+    betaname = 'chi_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_beta_' + now[5:10] + '_' + marker + '.txt'
     np.savetxt(betaname,chisbeta)
-    gammaname = 'chi_' + zzcetiblue[5:zzcetiblue.find(endpoint)] + '_gamma_' + now[5:10] + '_' + marker + '.txt'
+    gammaname = 'chi_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_gamma_' + now[5:10] + '_' + marker + '.txt'
     np.savetxt(gammaname,chisgamma)
-    deltaname = 'chi_' + zzcetiblue[5:zzcetiblue.find(endpoint)] + '_delta_' + now[5:10] + '_' + marker + '.txt'
+    deltaname = 'chi_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_delta_' + now[5:10] + '_' + marker + '.txt'
     np.savetxt(deltaname,chisdelta)
-    epsilonname = 'chi_' + zzcetiblue[5:zzcetiblue.find(endpoint)] + '_epsilon_' + now[5:10] + '_' + marker + '.txt'
+    epsilonname = 'chi_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_epsilon_' + now[5:10] + '_' + marker + '.txt'
     np.savetxt(epsilonname,chisepsilon)
-    H8name = 'chi_' + zzcetiblue[5:zzcetiblue.find(endpoint)] + '_H8_' + now[5:10] + '_' + marker + '.txt'
+    H8name = 'chi_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_H8_' + now[5:10] + '_' + marker + '.txt'
     np.savetxt(H8name,chis8)
-    H9name = 'chi_' + zzcetiblue[5:zzcetiblue.find(endpoint)] + '_H9_' + now[5:10] + '_' + marker + '.txt'
+    H9name = 'chi_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_H9_' + now[5:10] + '_' + marker + '.txt'
     np.savetxt(H9name,chis9)
-    H10name = 'chi_' + zzcetiblue[5:zzcetiblue.find(endpoint)] + '_H10_' + now[5:10] + '_' + marker + '.txt'
+    H10name = 'chi_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_H10_' + now[5:10] + '_' + marker + '.txt'
     np.savetxt(H10name,chis10)
-    #variationname = 'variation_models_' + zzcetiblue[5:zzcetiblue.find('_930_')] + now[5:10] + '_' + marker + '.txt'
+    #variationname = 'variation_models_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find('_930_')] + now[5:10] + '_' + marker + '.txt'
     #np.savetxt(variationname,variation)
-    
+    os.chdir(path)
 
     print ''
     print 'Best chi-squared is ', bestchi
