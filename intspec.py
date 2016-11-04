@@ -135,7 +135,13 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
 
 
     print 'Starting to run intspec.py'
-    data_directory = os.getcwd()
+    #If spectra are in a different directory, change to that directory
+    if zzcetiblue[0] == '.':
+        data_directory = zzcetiblue[0:zzcetiblue.find('w')]
+        home_directory = os.getcwd()
+    else:
+        data_directory = os.getcwd()
+        home_directory = os.getcwd()
     lambdarange = lambdas #This is the full wavelength range from blue and red setups.
     if case == 0:
         os.chdir(path)
@@ -901,9 +907,10 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         obs10sig = allsigma[indices[0]:indices[1]+1]
  
         #Save interpolated and normalized model
+        #os.chdir(home_directory)
         #os.chdir(data_directory)
-        intmodelname = 'da' + str(teff) + '_' + str(logg) + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find('.ms.')] + '_' + str(np.round(FWHM[0],decimals=2)) + '_norm.txt'
-        np.savetxt(intmodelname,np.transpose([alllambda,ncflux]))
+        #intmodelname = 'da' + str(teff) + '_' + str(logg) + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find('.ms.')] + '_' + str(np.round(FWHM[0],decimals=2)) + '_norm.txt'
+        #np.savetxt(intmodelname,np.transpose([alllambda,ncflux]))
         #os.chdir(path)
 
         #Calculate residuals and chi-square
@@ -971,6 +978,7 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
     deltachi = np.subtract(chis,bestchi)
     
     #Save information on best fitting model and the convolved model itself
+    os.chdir(home_directory)
     os.chdir(data_directory)
     f = open('fitting_solutions.txt','a') #'a' means solution will be appended to file if it exists, otherwise it will be created.
     now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M")

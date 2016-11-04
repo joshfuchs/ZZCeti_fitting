@@ -38,10 +38,6 @@ Done:
 #This program uses MPFIT to fit a pseudogaussian to the balmer lines of interest. Therefore you need to have mpfit.py in the same directory. You want to have the version written by Sergei Koposov as that is the most recent and uses numpy.
 
 import numpy as np
-#import matplotlib
-#matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
 import pyfits as pf # Infierno doesn't support astropy for some reason so using pyfits
 #import astropy.io.fits as pf
 import mpfit
@@ -50,7 +46,11 @@ import sys
 import os
 import datetime
 from scipy.optimize import leastsq
-
+if os.getcwd()[0:4] == '/pro': #Check if we are on Hatteras
+    import matplotlib
+    matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 # ===========================================================================
 
 #Define pseudogauss to fit one spectral line using parabola for continuum
@@ -1640,6 +1640,11 @@ else:
 #c = 2.99792e5
 #velocity = c * (measuredcenter-restwavelength)/restwavelength
 
+#If spectra are in a different directory, change to that directory
+home_directory = os.getcwd()
+if zzcetiblue[0] == '.':
+    os.chdir(zzcetiblue[0:zzcetiblue.find('w')])
+
 ##### Save the normalized spectrum for later use
 now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M")
 marker = str(np.round(FWHM[0],decimals=2))
@@ -1692,6 +1697,8 @@ plt.plot(hlambdas,hval-hfit + (hfit.min()+ymin)/2.,'k')
 plt.title(np.round(hparams.fnorm/hparams.dof,decimals=4))
 fitpdf.savefig()
 fitpdf.close()
+if zzcetiblue[0] == '.':
+    os.chdir(home_directory)
 
 
 #=================
@@ -1699,11 +1706,13 @@ fitpdf.close()
 if not redfile:
     zzcetired = 'not_fitting_Halpha'
 
-
 print "Starting intspec.py now "
 case = 0 #We'll be interpolating Koester's raw models
-filenames = 'shortlist.txt'
-path = '/afs/cas.unc.edu/depts/physics_astronomy/clemens/students/group/modelfitting/Koester_06'
+filenames = 'modelnames.txt'
+if os.getcwd()[0:4] == '/pro': #Check if we are on Hatteras
+    path = '/projects/stars/uncphysics/josh/DA_models'
+elif os.getcwd()[0:4] == '/afs': #Check if we are on Hatteras
+    path = '/afs/cas.unc.edu/depts/physics_astronomy/clemens/students/group/modelfitting/Koester_06'
 ncflux,bestT,bestg = intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path,marker,redfile)
 sys.exit()
 
