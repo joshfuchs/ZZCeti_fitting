@@ -990,28 +990,29 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
     f.write(info + '\n')
     f.close()
     #Now save the best convolved model and delta chi squared surface
+    file_header = str(lowestg) + ',' + str(deltag) + ',' + str(highestg) + ',' + str(lowestt) + ',' + str(deltat) + ',' + str(highestt)
     endpoint = '.ms.' #For shorter names, use '_930'
     newmodel = 'model_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_' + marker + '.txt' #NEED TO CHECK THIS TO MAKE SURE IT WORKS GENERALLY
     np.savetxt(newmodel,np.transpose([alllambda,bestmodel]))
     chiname = 'chi_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_' + marker + '.txt'
-    np.savetxt(chiname,chis)
+    np.savetxt(chiname,chis,header=file_header)
     if redfile:
         alphaname = 'chi_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_alpha_' + now[5:10] + '_' + marker + '.txt'
-        np.savetxt(alphaname,chisalpha)
+        np.savetxt(alphaname,chisalpha,header=file_header)
     betaname = 'chi_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_beta_' + now[5:10] + '_' + marker + '.txt'
-    np.savetxt(betaname,chisbeta)
+    np.savetxt(betaname,chisbeta,header=file_header)
     gammaname = 'chi_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_gamma_' + now[5:10] + '_' + marker + '.txt'
-    np.savetxt(gammaname,chisgamma)
+    np.savetxt(gammaname,chisgamma,header=file_header)
     deltaname = 'chi_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_delta_' + now[5:10] + '_' + marker + '.txt'
-    np.savetxt(deltaname,chisdelta)
+    np.savetxt(deltaname,chisdelta,header=file_header)
     epsilonname = 'chi_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_epsilon_' + now[5:10] + '_' + marker + '.txt'
-    np.savetxt(epsilonname,chisepsilon)
+    np.savetxt(epsilonname,chisepsilon,header=file_header)
     H8name = 'chi_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_H8_' + now[5:10] + '_' + marker + '.txt'
-    np.savetxt(H8name,chis8)
+    np.savetxt(H8name,chis8,header=file_header)
     H9name = 'chi_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_H9_' + now[5:10] + '_' + marker + '.txt'
-    np.savetxt(H9name,chis9)
+    np.savetxt(H9name,chis9,header=file_header)
     H10name = 'chi_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_H10_' + now[5:10] + '_' + marker + '.txt'
-    np.savetxt(H10name,chis10)
+    np.savetxt(H10name,chis10,header=file_header)
     #variationname = 'variation_models_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find('_930_')] + now[5:10] + '_' + marker + '.txt'
     #np.savetxt(variationname,variation)
     os.chdir(path)
