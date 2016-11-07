@@ -46,11 +46,15 @@ import sys
 import os
 import datetime
 from scipy.optimize import leastsq
+print os.getcwd()[0:4]
 if os.getcwd()[0:4] == '/pro': #Check if we are on Hatteras
     import matplotlib
     matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
+    import matplotlib.pyplot as plt
+    from matplotlib.backends.backend_pdf import PdfPages
+else:
+    import matplotlib.pyplot as plt
+    from matplotlib.backends.backend_pdf import PdfPages
 # ===========================================================================
 
 #Define pseudogauss to fit one spectral line using parabola for continuum
@@ -251,8 +255,8 @@ else:
 
 
 #plot the spectrum
-plt.clf()
-plt.plot(lambdas,dataval,'k')
+#plt.clf()
+#plt.plot(lambdas,dataval,'k')
 #plt.plot(lambdas,sigmaval)
 #plt.plot(FWHM)
 #plt.show()
@@ -976,9 +980,9 @@ if redfile:
     print aparams.status, aparams.niter, aparams.fnorm, aparams.dof
     
     
-    plt.clf()
-    plt.plot(alambdas,alphaval,'b')
-    plt.plot(alambdas,alphafit,'g')
+    #plt.clf()
+    #plt.plot(alambdas,alphaval,'b')
+    #plt.plot(alambdas,alphafit,'g')
     #plt.plot(alambdas,pseudogausscubic(alambdas,aest),'k')
     #plt.plot(alambdas,aparams.params[0]*1. + aparams.params[1]*alambdas +aparams.params[2]*alambdas**2.)
     #plt.show()
@@ -997,9 +1001,9 @@ bcenter = bparams.params[4]
 betafit = pseudogausscubic(blambdas,bparams.params)
 betavariation = np.sum((betafit - betaval)**2.)
 
-plt.clf()
-plt.plot(blambdas,betaval,'b',label='data')
-plt.plot(blambdas,betafit,'r',label='fit')
+#plt.clf()
+#plt.plot(blambdas,betaval,'b',label='data')
+#plt.plot(blambdas,betafit,'r',label='fit')
 #plt.plot(blambdas,bparams.params[0]*1. + bparams.params[1]*blambdas+bparams.params[2]*blambdas**2.)
 #plt.show()
 #sys.exit()
