@@ -42,18 +42,14 @@ import sys
 import os
 import datetime
 from scipy.optimize import leastsq
-#print os.getcwd()[0:4]
-#if os.getcwd()[0:4] == '/pro': #Check if we are on Hatteras
-#    print 'On Hatteras'
-import matplotlib
-print matplotlib.get_backend()
-matplotlib.use('Agg')
-print matplotlib.get_backend()
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
-#else:
-#    import matplotlib.pyplot as plt
-#    from matplotlib.backends.backend_pdf import PdfPages
+if os.getcwd()[0:4] == '/pro': #Check if we are on Hatteras
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    from matplotlib.backends.backend_pdf import PdfPages
+else:
+    import matplotlib.pyplot as plt
+    from matplotlib.backends.backend_pdf import PdfPages
 import mpfit
 from intspec import intspecs
 import pyfits as pf # Infierno doesn't support astropy for some reason so using pyfits
