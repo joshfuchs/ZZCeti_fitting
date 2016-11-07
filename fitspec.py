@@ -38,10 +38,6 @@ Done:
 #This program uses MPFIT to fit a pseudogaussian to the balmer lines of interest. Therefore you need to have mpfit.py in the same directory. You want to have the version written by Sergei Koposov as that is the most recent and uses numpy.
 
 import numpy as np
-import pyfits as pf # Infierno doesn't support astropy for some reason so using pyfits
-#import astropy.io.fits as pf
-import mpfit
-from intspec import intspecs
 import sys
 import os
 import datetime
@@ -50,14 +46,20 @@ from scipy.optimize import leastsq
 #if os.getcwd()[0:4] == '/pro': #Check if we are on Hatteras
 #    print 'On Hatteras'
 import matplotlib
-matplotlib.get_backend()
+print matplotlib.get_backend()
 matplotlib.use('Agg')
-matplotlib.get_backend()
+print matplotlib.get_backend()
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 #else:
 #    import matplotlib.pyplot as plt
 #    from matplotlib.backends.backend_pdf import PdfPages
+import mpfit
+from intspec import intspecs
+import pyfits as pf # Infierno doesn't support astropy for some reason so using pyfits
+#import astropy.io.fits as pf
+
+
 # ===========================================================================
 
 #Define pseudogauss to fit one spectral line using parabola for continuum
