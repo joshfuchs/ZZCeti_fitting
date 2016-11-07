@@ -50,7 +50,9 @@ from scipy.optimize import leastsq
 #if os.getcwd()[0:4] == '/pro': #Check if we are on Hatteras
 #    print 'On Hatteras'
 import matplotlib
+matplotlib.get_backend()
 matplotlib.use('Agg')
+matplotlib.get_backend()
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 #else:
