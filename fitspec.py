@@ -48,6 +48,7 @@ import datetime
 from scipy.optimize import leastsq
 print os.getcwd()[0:4]
 if os.getcwd()[0:4] == '/pro': #Check if we are on Hatteras
+    print 'On Hatteras'
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
