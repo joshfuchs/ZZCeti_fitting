@@ -389,23 +389,31 @@ if redfile:
     alphaval = dataval[afitlow:afithi+1]
     
     aest = np.zeros(8)
-    xes = np.array([lambdas[afitlow],lambdas[alow],lambdas[alow+10],lambdas[ahi-10],lambdas[ahi],lambdas[afithi]])
-    yes = np.array([dataval[afitlow],dataval[alow],dataval[alow+10],dataval[ahi-10],dataval[ahi],dataval[afithi]])
-    ap = np.polyfit(xes,yes,3)
-    app = np.poly1d(ap)
-    aest[0] = ap[3]
-    aest[1] = ap[2]
-    aest[2] = ap[1]
-    aest[7] = ap[0]
-    aest[3] = np.min(dataval[alow:ahi+1]) - app(6562.79) #depth of line relative to continuum
-    aest[4] = 6562.79 #rest wavelength of H alpha
-    ahalfmax = app(6562.79) + aest[3]/3.
-    adiff = np.abs(alphaval-ahalfmax)
-    alowidx = adiff[np.where(alambdas < 6562.79)].argmin()
-    ahighidx = adiff[np.where(alambdas > 6562.79)].argmin() + len(adiff[np.where(alambdas < 6562.79)])
-    aest[5] = (alambdas[ahighidx] - alambdas[alowidx]) / (2.*np.sqrt(2.*np.log(2.))) #convert FWHM to sigma
-    aest[6] = 1.0 #how much of a pseudo-gaussian
-
+    #xes = np.array([lambdas[afitlow],lambdas[alow],lambdas[alow+10],lambdas[ahi-10],lambdas[ahi],lambdas[afithi]])
+    #yes = np.array([dataval[afitlow],dataval[alow],dataval[alow+10],dataval[ahi-10],dataval[ahi],dataval[afithi]])
+    #ap = np.polyfit(xes,yes,3)
+    #app = np.poly1d(ap)
+    #aest[0] = ap[3]
+    #aest[1] = ap[2]
+    #aest[2] = ap[1]
+    #aest[7] = ap[0]
+    #aest[3] = np.min(dataval[alow:ahi+1]) - app(6562.79) #depth of line relative to continuum
+    #aest[4] = 6562.79 #rest wavelength of H alpha
+    #ahalfmax = app(6562.79) + aest[3]/3.
+    #adiff = np.abs(alphaval-ahalfmax)
+    #alowidx = adiff[np.where(alambdas < 6562.79)].argmin()
+    #ahighidx = adiff[np.where(alambdas > 6562.79)].argmin() + len(adiff[np.where(alambdas < 6562.79)])
+    #aest[5] = (alambdas[ahighidx] - alambdas[alowidx]) / (2.*np.sqrt(2.*np.log(2.))) #convert FWHM to sigma
+    #aest[6] = 1.0 #how much of a pseudo-gaussian
+    #From fit to GD 165 on 2015-04-26
+    aest[0] = -3.329793545118666952e+04
+    aest[1] = 1.452254867177559028e+01
+    aest[2] = -2.080336009400552289e-03
+    aest[3] = -1.068782717847220596e+02
+    aest[4] = 6.564426653206536685e+03
+    aest[5] = 3.961723338240169312e+01
+    aest[6] = 7.322514919203364503e-01
+    aest[7] = 9.830814524561716704e-08
 
 
 blambdas = lambdas[bfitlow:bfithi+1]
@@ -413,23 +421,31 @@ bsigmas = sigmaval[bfitlow:bfithi+1]
 betaval = dataval[bfitlow:bfithi+1]
 
 best = np.zeros(8)
-xes = np.array([lambdas[bfitlow],lambdas[blow],lambdas[blow+10],lambdas[bhi],lambdas[bfithi]])
-yes = np.array([dataval[bfitlow],dataval[blow],dataval[blow+10],dataval[bhi],dataval[bfithi]])
-bp = np.polyfit(xes,yes,3)
-bpp = np.poly1d(bp)
-best[0] = bp[3]
-best[1] = bp[2]
-best[2] = bp[1]
-best[7] = bp[0]
-best[3] = np.min(dataval[blow:bhi+1]) - bpp(4862.71) #depth of line relative to continuum
-best[4] = 4862.71 #rest wavelength of H beta
-bhalfmax = bpp(4862.71) + best[3]/2.5
-bdiff = np.abs(betaval-bhalfmax)
-blowidx = bdiff[np.where(blambdas < 4862.71)].argmin()
-bhighidx = bdiff[np.where(blambdas > 4862.71)].argmin() + len(bdiff[np.where(blambdas < 4862.71)])
-best[5] = (blambdas[bhighidx] - blambdas[blowidx]) / (2.*np.sqrt(2.*np.log(2.))) #convert FWHM to sigma
-best[6] = 1.0 #how much of a pseudo-gaussian
-
+#xes = np.array([lambdas[bfitlow],lambdas[blow],lambdas[blow+10],lambdas[bhi],lambdas[bfithi]])
+#yes = np.array([dataval[bfitlow],dataval[blow],dataval[blow+10],dataval[bhi],dataval[bfithi]])
+#bp = np.polyfit(xes,yes,3)
+#bpp = np.poly1d(bp)
+#best[0] = bp[3]
+#best[1] = bp[2]
+#best[2] = bp[1]
+#best[7] = bp[0]
+#best[3] = np.min(dataval[blow:bhi+1]) - bpp(4862.71) #depth of line relative to continuum
+#best[4] = 4862.71 #rest wavelength of H beta
+#bhalfmax = bpp(4862.71) + best[3]/2.5
+#bdiff = np.abs(betaval-bhalfmax)
+#blowidx = bdiff[np.where(blambdas < 4862.71)].argmin()
+#bhighidx = bdiff[np.where(blambdas > 4862.71)].argmin() + len(bdiff[np.where(blambdas < 4862.71)])
+#best[5] = (blambdas[bhighidx] - blambdas[blowidx]) / (2.*np.sqrt(2.*np.log(2.))) #convert FWHM to sigma
+#best[6] = 1.0 #how much of a pseudo-gaussian
+#From fit to GD 165 on 2015-04-26
+best[0] = 3.464194462449746788e+05
+best[1] = -2.130872658512382429e+02
+best[2] = 4.378414747018435915e-02
+best[3] = -2.988719360409691035e+02
+best[4] = 4.861631463570591222e+03
+best[5] = 3.362166147167607733e+01
+best[6] = 8.720131814693605765e-01
+best[7] = -3.001151458131578997e-06
 
 
 glambdas = lambdas[gfitlow:gfithi+1]
@@ -773,8 +789,8 @@ fitpdf.close()
 #########################
 
 #Fit gamma through 10 at once
-highwavelengthlow = 3782. #3782 for H10 and 3755 for H11
-hlow = np.min(np.where(lambdas > highwavelengthlow)) 
+#highwavelengthlow = 3782. #3782 for H10 and 3755 for H11
+#hlow = np.min(np.where(lambdas > highwavelengthlow)) 
 
 hlambdas = lambdas[hlow:gfithi+1]
 hval = dataval[hlow:gfithi+1]
@@ -783,35 +799,35 @@ hsig = sigmaval[hlow:gfithi+1]
 bigest = np.zeros(28)
 
 #Guesses from GD 165: 2015-04-26
-bigest[0] = -1.41159057e+05
-bigest[1] = 1.00443047e+02
-bigest[2] = -2.36076932e-02
-bigest[3] = 1.84139110e-06
+bigest[0] = -1.406063761484372953e+05#-1.41159057e+05
+bigest[1] = 1.003170676291885854e+02#1.00443047e+02
+bigest[2] = -2.363770735364889922e-02#-2.36076932e-02
+bigest[3] = 1.848214768237999889e-06#1.84139110e-06
 bigpp = np.poly1d([bigest[3],bigest[2],bigest[1],bigest[0]])
-bigest[4] = -4.06035255e+02
-bigest[5] = 4.34092583e+03
-bigest[6] = 2.72522312e+01
-bigest[7] = 9.83112306e-01
-bigest[8] = -4.78134615e+02
-bigest[9] = 4.10272287e+03
-bigest[10] = 2.69840743e+01
-bigest[11] = 9.61424635e-01
-bigest[12] = -4.11042483e+02
-bigest[13] = 3.97149906e+03
-bigest[14] = 2.08403895e+01
-bigest[15] = 1.14000247e+00
-bigest[16] = -3.07128449e+02
-bigest[17] = 3.88991856e+03
-bigest[18] = 1.76330401e+01
-bigest[19] = 1.22352091e+00
-bigest[20] = -1.48658941e+02
-bigest[21] = 3.83730915e+03
-bigest[22] = 1.14755484e+01
-bigest[23] = 1.42376957e+00
-bigest[24] = -1.78719907e+02
-bigest[25] = 3.79796636e+03
-bigest[26] = 3.30098176e+01
-bigest[27] = 1.07062679e+00
+bigest[4] = -4.040590087943886033e+02#-4.06035255e+02
+bigest[5] = 4.340925249063438059e+03#4.34092583e+03
+bigest[6] = 2.708817417035567132e+01#2.72522312e+01
+bigest[7] = 9.878402835308270902e-01#9.83112306e-01
+bigest[8] = -4.794659311360872493e+02#-4.78134615e+02
+bigest[9] = 4.102701783225264080e+03#4.10272287e+03
+bigest[10] = 2.709696664077381456e+01#2.69840743e+01
+bigest[11] = 9.631399125660804472e-01#9.61424635e-01
+bigest[12] = -4.166094422675674878e+02#-4.11042483e+02
+bigest[13] = 3.971486630382756175e+03#3.97149906e+03
+bigest[14] = 2.116735070719211720e+01#2.08403895e+01
+bigest[15] = 1.130689652723139815e+00#1.14000247e+00
+bigest[16] = -3.106269362989938259e+02#-3.07128449e+02
+bigest[17] = 3.889903866559738617e+03#3.88991856e+03
+bigest[18] = 1.782651953604086259e+01#1.76330401e+01
+bigest[19] = 1.223808191795874301e+00#1.22352091e+00
+bigest[20] = -1.487979807794951057e+02#-1.48658941e+02
+bigest[21] = 3.837355731272535195e+03#3.83730915e+03
+bigest[22] = 1.148214333621755578e+01#1.14755484e+01
+bigest[23] = 1.425091059538869054e+00#1.42376957e+00
+bigest[24] = -1.930436817526830851e+02#-1.78719907e+02
+bigest[25] = 3.797740412884535090e+03#3.79796636e+03
+bigest[26] = 3.532527100706699485e+01#3.30098176e+01
+bigest[27] = 1.092804870594776379e+00#1.07062679e+00
 
 '''
 #Guess for continuum
@@ -904,6 +920,7 @@ hparams = mpfit.mpfit(fitbigpseudogaussgamma,bigest,functkw=bigfa,maxiter=200,ft
 print hparams.status, hparams.niter, hparams.fnorm, hparams.dof, hparams.fnorm/hparams.dof
 #print bigest
 print hparams.params
+print ''
 hfit = bigpseudogaussgamma(hlambdas,hparams.params)
 
 #Get line centers
@@ -1682,7 +1699,7 @@ if redfile:
     plt.plot(alambdas,alphafit,'r')
     axes = plt.gca()
     ymin, ymax = axes.get_ylim()
-    plt.plot(alambdas,alphaval-alphafit + (alphafit.min()+ymin)/2.,'k')
+    plt.plot(alambdas,alphaval-alphafit + (alphafit.min()+ymin)/2.5,'k')
     plt.title(np.round(aparams.fnorm/aparams.dof,decimals=4))
     fitpdf.savefig()
 plt.clf()
@@ -1690,7 +1707,7 @@ plt.plot(blambdas,betaval,'b')
 plt.plot(blambdas,betafit,'r')
 axes = plt.gca()
 ymin, ymax = axes.get_ylim()
-plt.plot(blambdas,betaval-betafit + (betafit.min()+ymin)/2.,'k')
+plt.plot(blambdas,betaval-betafit + (betafit.min()+ymin)/2.5,'k')
 plt.title(np.round(bparams.fnorm/bparams.dof,decimals=4))
 fitpdf.savefig()
 plt.clf()
@@ -1698,7 +1715,7 @@ plt.plot(hlambdas,hval,'b')
 plt.plot(hlambdas,hfit,'r')
 axes = plt.gca()
 ymin, ymax = axes.get_ylim()
-plt.plot(hlambdas,hval-hfit + (hfit.min()+ymin)/2.,'k')
+plt.plot(hlambdas,hval-hfit + (hfit.min()+ymin)/2.5,'k')
 plt.title(np.round(hparams.fnorm/hparams.dof,decimals=4))
 fitpdf.savefig()
 fitpdf.close()
@@ -1712,21 +1729,27 @@ if not redfile:
     zzcetired = 'not_fitting_Halpha'
 
 print "Starting intspec.py now "
+'''
 case = 0 #We'll be interpolating Koester's raw models
 filenames = 'modelnames.txt'
 if os.getcwd()[0:4] == '/pro': #Check if we are on Hatteras
     path = '/projects/stars/uncphysics/josh/DA_models'
-elif os.getcwd()[0:4] == '/afs': #Check if we are on Hatteras
+elif os.getcwd()[0:4] == '/afs': #Check if we are on Infierno
     path = '/afs/cas.unc.edu/depts/physics_astronomy/clemens/students/group/modelfitting/Koester_06'
 ncflux,bestT,bestg = intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path,marker,redfile)
 sys.exit()
-
+'''
 
 #================
 #Run the spectrum through the fine grid
 case = 1 #We'll be comparing our new grid to the spectrum.
 filenames = 'interpolated_names.txt'
-path = '/srv/two/jtfuchs/Interpolated_Models/Koester_ML2alpha06/bottom11500_750'
-#path = '/srv/two/jtfuchs/Interpolated_Models/Koester_ML2alpha08/bottom10000_700'
+
+if os.getcwd()[0:4] == '/pro': #Check if we are on Hatteras
+    path = '/projects/stars/uncphysics/josh/Koester_ML2alpha08'
+elif os.getcwd()[0:4] == '/afs': #Check if we are on Infierno
+    path = '/srv/two/jtfuchs/Interpolated_Models/Koester_ML2alpha06/bottom11500_750'
+    #path = '/srv/two/jtfuchs/Interpolated_Models/Koester_ML2alpha08/bottom10000_700'
+
 ncflux,bestT,bestg = intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path,marker,redfile)
 
