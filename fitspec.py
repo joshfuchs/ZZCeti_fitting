@@ -1700,7 +1700,7 @@ if redfile:
     axes = plt.gca()
     ymin, ymax = axes.get_ylim()
     plt.plot(alambdas,alphaval-alphafit + (alphafit.min()+ymin)/2.5,'k')
-    plt.title(np.round(aparams.fnorm/aparams.dof,decimals=4))
+    plt.title(zzcetired[zzcetired.find('w'):zzcetired.find(endpoint)] + ', R. chi^2: ' + str(np.round(aparams.fnorm/aparams.dof,decimals=4)))
     fitpdf.savefig()
 plt.clf()
 plt.plot(blambdas,betaval,'b')
@@ -1708,7 +1708,7 @@ plt.plot(blambdas,betafit,'r')
 axes = plt.gca()
 ymin, ymax = axes.get_ylim()
 plt.plot(blambdas,betaval-betafit + (betafit.min()+ymin)/2.5,'k')
-plt.title(np.round(bparams.fnorm/bparams.dof,decimals=4))
+plt.title(zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + ', R. chi^2: ' + str(np.round(bparams.fnorm/bparams.dof,decimals=4)))
 fitpdf.savefig()
 plt.clf()
 plt.plot(hlambdas,hval,'b')
@@ -1716,12 +1716,12 @@ plt.plot(hlambdas,hfit,'r')
 axes = plt.gca()
 ymin, ymax = axes.get_ylim()
 plt.plot(hlambdas,hval-hfit + (hfit.min()+ymin)/2.5,'k')
-plt.title(np.round(hparams.fnorm/hparams.dof,decimals=4))
+plt.title(zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + ', R. chi^2: ' + str(np.round(hparams.fnorm/hparams.dof,decimals=4)))
 fitpdf.savefig()
 fitpdf.close()
 if zzcetiblue[0] == '.':
     os.chdir(home_directory)
-
+exit()
 
 #=================
 #Run the spectrum through the coarse grid
