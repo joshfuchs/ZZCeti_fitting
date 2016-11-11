@@ -1721,7 +1721,6 @@ fitpdf.savefig()
 fitpdf.close()
 if zzcetiblue[0] == '.':
     os.chdir(home_directory)
-exit()
 
 #=================
 #Run the spectrum through the coarse grid
