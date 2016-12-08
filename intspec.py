@@ -18,6 +18,7 @@ import os
 import sys
 import datetime
 import mpfit
+#from astropy.table import Table
 #import pyfits as pf # Infierno doesn't support astropy for some reason so using pyfits
 
 #ported to python from IDL by Josh Fuchs
@@ -99,7 +100,7 @@ def multifitpseudogauss(p,fjac=None,x=None, y=None, err=None):
 #Case = 0 means using D. Koester's raw models
 #Case = 1 means using the interpolation of those models to a smaller grid.
 
-def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path,marker,redfile):
+def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path,marker,redfile,RA,DEC,SNR,airmass):
 
     '''
     :DESCRIPTION: Interpolates and convolves DA models to match observed spectra. Fits pseudogaussians to DA models and compares to normalized, observed spectra. Save chi-square values.
@@ -980,15 +981,21 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
     #Save information on best fitting model and the convolved model itself
     os.chdir(home_directory)
     os.chdir(data_directory)
-    f = open('fitting_solutions.txt','a') #'a' means solution will be appended to file if it exists, otherwise it will be created.
     now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M")
     if case == 0:
         bestmodelname = 'da' + str(int(bestT)) + '_' + str(int(bestg)) + '.dk'
     if case == 1:
         bestmodelname = 'da' + str(int(bestT)) + '_' + str(int(bestg)) + '.jf'
-    info = zzcetiblue + '\t' + zzcetired + '\t' +  bestmodelname + '\t' + str(bestT) + '\t' + str(bestg) + '\t' + marker + '\t' + str(bestchi) + '\t' + now
+    #print type(zzcetiblue),type(zzcetired),type(now),type(bestmodelname),type(bestT),type(bestg),type(float(bestchi)),type(marker),type(SNR),type(airmass),type(RA),type(DEC)
+    #print zzcetiblue,zzcetired,now,bestmodelname,bestT,bestg,float(bestchi),marker,SNR,airmass,RA,DEC
+    #info = Table([zzcetiblue,zzcetired,now,bestmodelname,bestT,bestg,float(bestchi),marker,SNR,airmass,RA,DEC],names=['Blue Filename','Red Filename','Date of Fit','Best Model','Best Teff','Best logg','Best chi2','FWHM','SNR','Airmass','RA','DEC'])
+    #info.write('fitting_solutions.txt',format='ascii',append=True)
+    
+    f = open('fitting_solutions.txt','a') #'a' means solution will be appended to file if it exists, otherwise it will be created.
+    info = zzcetiblue + '\t' + zzcetired + '\t' +  bestmodelname + '\t' + str(bestT) + '\t' + str(bestg) + '\t' + marker + '\t' + str(bestchi) + '\t' + str(SNR) + '\t' + str(airmass) + '\t' + RA + '\t' + DEC + '\t' + now
     f.write(info + '\n')
     f.close()
+    
     #Now save the best convolved model and delta chi squared surface
     file_header = str(lowestg) + ',' + str(deltag) + ',' + str(highestg) + ',' + str(lowestt) + ',' + str(deltat) + ',' + str(highestt)
     endpoint = '.ms.' #For shorter names, use '_930'

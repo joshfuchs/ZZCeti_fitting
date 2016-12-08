@@ -52,7 +52,7 @@ else:
     from matplotlib.backends.backend_pdf import PdfPages
 import mpfit
 from intspec import intspecs
-import pyfits as pf # Infierno doesn't support astropy for some reason so using pyfits
+import pyfits as fits # Infierno doesn't support astropy for some reason so using pyfits
 #import astropy.io.fits as pf
 
 
@@ -164,9 +164,15 @@ else:
     print '\n Incorrect number of arguments. \n'
 
 #Read in the blue spectrum
-datalistblue = pf.open(zzcetiblue)
+datalistblue = fits.open(zzcetiblue)
 datavalblue = datalistblue[0].data[0,0,:] #Reads in the object spectrum,data[0,0,:] is optimally subtracted, data[1,0,:] is raw extraction,  data[2,0,:] is sky, data[3,0,:] is sigma spectrum
 sigmavalblue = datalistblue[0].data[3,0,:] #Sigma spectrum
+
+#Header values to save
+RA = datalistblue[0].header['RA']
+DEC = datalistblue[0].header['DEC']
+SNR = float(datalistblue[0].header['SNR'])
+airmass = float(datalistblue[0].header['AIRMASS'])
 
 #Read in FWHM of blue spectrum from header. Use one value only. If you change which one you use, don't forget to change it below too.
 #FWHMpixblue = datalistblue[0].header['specfwhm'] 
@@ -203,9 +209,23 @@ PixelsBlue= biningblue*(np.arange(0,nxblue,1)+trim_offset_blue)
 lambdasblue = DispCalc(PixelsBlue, alphablue, thetablue, frblue, fdblue, flblue, zPntblue)
 
 
+#Mask out the Littrow Ghost if 'LTTROW' is in the image header
+try:
+    print 'Masking littrow ghost.'
+    littrow_ghost = datalistblue[0].header['LITTROW']
+    littrow_mask_low = int(float(littrow_ghost[1:len(littrow_ghost)-1].split(',')[0]) - float(trim_offset_blue))
+    littrow_mask_high = int(float(littrow_ghost[1:len(littrow_ghost)-1].split(',')[1]) - float(trim_offset_blue))
+    lambdasblue = np.concatenate((lambdasblue[:littrow_mask_low+1],lambdasblue[littrow_mask_high:]))
+    datavalblue = np.concatenate((datavalblue[:littrow_mask_low+1],datavalblue[littrow_mask_high:]))
+    sigmavalblue = np.concatenate((sigmavalblue[:littrow_mask_low+1],sigmavalblue[littrow_mask_high:]))
+    FWHMpixblue = np.concatenate((FWHMpixblue[:littrow_mask_low+1],FWHMpixblue[littrow_mask_high:]))
+except:
+    print 'No mask for Littrow ghost'
+    pass
+
 #Read in the red spectrum
 if redfile:
-    datalistred = pf.open(zzcetired)
+    datalistred = fits.open(zzcetired)
     datavalred = datalistred[0].data[0,0,:] #data[0,0,:] is optimally extracted, data[2,0,:] is sky
     sigmavalred = datalistred[0].data[3,0,:] #Sigma spectrum
     #FWHMpixred = datalistred[0].header['specfwhm'] 
@@ -257,8 +277,8 @@ else:
 
 #plot the spectrum
 #plt.clf()
-#plt.plot(lambdas,dataval,'k')
-#plt.plot(lambdas,sigmaval)
+#plt.plot(lambdas,dataval,'k^')
+#plt.plot(lambdas,sigmaval,'b^')
 #plt.plot(FWHM)
 #plt.show()
 #sys.exit()
@@ -389,23 +409,28 @@ if redfile:
     alphaval = dataval[afitlow:afithi+1]
     
     aest = np.zeros(8)
-    #xes = np.array([lambdas[afitlow],lambdas[alow],lambdas[alow+10],lambdas[ahi-10],lambdas[ahi],lambdas[afithi]])
-    #yes = np.array([dataval[afitlow],dataval[alow],dataval[alow+10],dataval[ahi-10],dataval[ahi],dataval[afithi]])
-    #ap = np.polyfit(xes,yes,3)
-    #app = np.poly1d(ap)
-    #aest[0] = ap[3]
-    #aest[1] = ap[2]
-    #aest[2] = ap[1]
-    #aest[7] = ap[0]
-    #aest[3] = np.min(dataval[alow:ahi+1]) - app(6562.79) #depth of line relative to continuum
-    #aest[4] = 6562.79 #rest wavelength of H alpha
-    #ahalfmax = app(6562.79) + aest[3]/3.
-    #adiff = np.abs(alphaval-ahalfmax)
-    #alowidx = adiff[np.where(alambdas < 6562.79)].argmin()
-    #ahighidx = adiff[np.where(alambdas > 6562.79)].argmin() + len(adiff[np.where(alambdas < 6562.79)])
-    #aest[5] = (alambdas[ahighidx] - alambdas[alowidx]) / (2.*np.sqrt(2.*np.log(2.))) #convert FWHM to sigma
-    #aest[6] = 1.0 #how much of a pseudo-gaussian
+    ######
+    '''
+    xes = np.array([lambdas[afitlow],lambdas[alow],lambdas[alow+10],lambdas[ahi-10],lambdas[ahi],lambdas[afithi]])
+    yes = np.array([dataval[afitlow],dataval[alow],dataval[alow+10],dataval[ahi-10],dataval[ahi],dataval[afithi]])
+    ap = np.polyfit(xes,yes,3)
+    app = np.poly1d(ap)
+    aest[0] = ap[3]
+    aest[1] = ap[2]
+    aest[2] = ap[1]
+    aest[7] = ap[0]
+    aest[3] = np.min(dataval[alow:ahi+1]) - app(6562.79) #depth of line relative to continuum
+    aest[4] = 6562.79 #rest wavelength of H alpha
+    ahalfmax = app(6562.79) + aest[3]/3.
+    adiff = np.abs(alphaval-ahalfmax)
+    alowidx = adiff[np.where(alambdas < 6562.79)].argmin()
+    ahighidx = adiff[np.where(alambdas > 6562.79)].argmin() + len(adiff[np.where(alambdas < 6562.79)])
+    aest[5] = (alambdas[ahighidx] - alambdas[alowidx]) / (2.*np.sqrt(2.*np.log(2.))) #convert FWHM to sigma
+    aest[6] = 1.0 #how much of a pseudo-gaussian
+    '''
+    ######
     #From fit to GD 165 on 2015-04-26
+    
     aest[0] = -3.329793545118666952e+04
     aest[1] = 1.452254867177559028e+01
     aest[2] = -2.080336009400552289e-03
@@ -414,6 +439,7 @@ if redfile:
     aest[5] = 3.961723338240169312e+01
     aest[6] = 7.322514919203364503e-01
     aest[7] = 9.830814524561716704e-08
+    
 
 
 blambdas = lambdas[bfitlow:bfithi+1]
@@ -421,23 +447,28 @@ bsigmas = sigmaval[bfitlow:bfithi+1]
 betaval = dataval[bfitlow:bfithi+1]
 
 best = np.zeros(8)
-#xes = np.array([lambdas[bfitlow],lambdas[blow],lambdas[blow+10],lambdas[bhi],lambdas[bfithi]])
-#yes = np.array([dataval[bfitlow],dataval[blow],dataval[blow+10],dataval[bhi],dataval[bfithi]])
-#bp = np.polyfit(xes,yes,3)
-#bpp = np.poly1d(bp)
-#best[0] = bp[3]
-#best[1] = bp[2]
-#best[2] = bp[1]
-#best[7] = bp[0]
-#best[3] = np.min(dataval[blow:bhi+1]) - bpp(4862.71) #depth of line relative to continuum
-#best[4] = 4862.71 #rest wavelength of H beta
-#bhalfmax = bpp(4862.71) + best[3]/2.5
-#bdiff = np.abs(betaval-bhalfmax)
-#blowidx = bdiff[np.where(blambdas < 4862.71)].argmin()
-#bhighidx = bdiff[np.where(blambdas > 4862.71)].argmin() + len(bdiff[np.where(blambdas < 4862.71)])
-#best[5] = (blambdas[bhighidx] - blambdas[blowidx]) / (2.*np.sqrt(2.*np.log(2.))) #convert FWHM to sigma
-#best[6] = 1.0 #how much of a pseudo-gaussian
+#######
+'''
+xes = np.array([lambdas[bfitlow],lambdas[blow],lambdas[blow+10],lambdas[bhi],lambdas[bfithi]])
+yes = np.array([dataval[bfitlow],dataval[blow],dataval[blow+10],dataval[bhi],dataval[bfithi]])
+bp = np.polyfit(xes,yes,3)
+bpp = np.poly1d(bp)
+best[0] = bp[3]
+best[1] = bp[2]
+best[2] = bp[1]
+best[7] = bp[0]
+best[3] = np.min(dataval[blow:bhi+1]) - bpp(4862.71) #depth of line relative to continuum
+best[4] = 4862.71 #rest wavelength of H beta
+bhalfmax = bpp(4862.71) + best[3]/2.5
+bdiff = np.abs(betaval-bhalfmax)
+blowidx = bdiff[np.where(blambdas < 4862.71)].argmin()
+bhighidx = bdiff[np.where(blambdas > 4862.71)].argmin() + len(bdiff[np.where(blambdas < 4862.71)])
+best[5] = (blambdas[bhighidx] - blambdas[blowidx]) / (2.*np.sqrt(2.*np.log(2.))) #convert FWHM to sigma
+best[6] = 1.0 #how much of a pseudo-gaussian
+'''
+##########
 #From fit to GD 165 on 2015-04-26
+
 best[0] = 3.464194462449746788e+05
 best[1] = -2.130872658512382429e+02
 best[2] = 4.378414747018435915e-02
@@ -563,9 +594,10 @@ hest[22] = 1.2 #how much of a pseudo-gaussian
 #hest[25] = 5. #NEED TO CHECK THIS
 #hest[26] = 1. #how much of a pseudo-gaussian
 '''
-'''
+
 #########################
 #Fit gamma through 11
+'''
 highwavelengthlow = 3755. #3782 for H10 and 3755 for H11
 hlow = np.min(np.where(lambdas > highwavelengthlow)) 
 
@@ -699,8 +731,8 @@ H11lowidx = H11diff[np.where(H11lambdas < 3770.6)].argmin()
 H11highidx = H11diff[np.where(H11lambdas > 3770.6)].argmin() + len(H11diff[np.where(H11lambdas < 3770.6)])
 bigest[30] = (H11lambdas[H11highidx] - H11lambdas[H11lowidx]) / (2.*np.sqrt(2.*np.log(2.)))
 bigest[31] = 1.2 #how much of a pseudo-gaussian
-
-
+'''
+'''
 #Constrain width of H11 pseudogaussian to be smaller than H10 pseudogaussian
 paraminfo = [{'limits':[0,0],'limited':[0,0]} for i in range(32)]
 #paraminfo[27]['limited'] = [0,1]
@@ -733,15 +765,15 @@ ecenter = hparams.params[13]
 H8center = hparams.params[17]
 H9center = hparams.params[21]
 H10center = hparams.params[25]
-'''
-'''
+
+
 #Redefine these variables for quick switching of methods
 glambdas = hlambdas
 gamval = hval
 gsigmas = hsig
 gamfit = hfit
-'''
-'''
+
+
 #print bigest
 print hparams.params
 plt.clf()
@@ -761,8 +793,9 @@ plt.plot(hlambdas,hparams.params[0] + hparams.params[1]*hlambdas + hparams.param
 #plt.plot(biglambdas,25.+bigest[4]*np.exp(-(np.abs(biglambdas-bigest[5])/(np.sqrt(2.)*bigest[6]))**bigest[7]),'c')
 #plt.plot(biglambdas,25.+bigest[20]*np.exp(-(np.abs(biglambdas-bigest[21])/(np.sqrt(2.)*bigest[22]))**bigest[23]),'c')
 
-plt.show()
-
+#plt.show()
+'''
+'''
 now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M")
 endpoint = '.ms.'
 savefitspec = 'fit_' + zzcetiblue[5:zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_H11.pdf'
@@ -781,10 +814,10 @@ plt.plot(hlambdas,hparams.params[0] + hparams.params[1]*hlambdas + hparams.param
 plt.title(np.round(chisquare2/dof2,decimals=4))
 fitpdf.savefig()
 fitpdf.close()
-
+'''
 
 #sys.exit()
-'''
+
 ########################
 #########################
 
@@ -799,6 +832,7 @@ hsig = sigmaval[hlow:gfithi+1]
 bigest = np.zeros(28)
 
 #Guesses from GD 165: 2015-04-26
+
 bigest[0] = -1.406063761484372953e+05#-1.41159057e+05
 bigest[1] = 1.003170676291885854e+02#1.00443047e+02
 bigest[2] = -2.363770735364889922e-02#-2.36076932e-02
@@ -976,10 +1010,10 @@ plt.plot(hlambdas,hparams.params[0] + hparams.params[1]*hlambdas + hparams.param
 plt.title(np.round(hparams.fnorm/hparams.dof,decimals=4))
 fitpdf.savefig()
 fitpdf.close()
-
-
-sys.exit()
 '''
+
+#sys.exit()
+
 ##########################################33
 
 
@@ -1020,7 +1054,7 @@ betafit = pseudogausscubic(blambdas,bparams.params)
 betavariation = np.sum((betafit - betaval)**2.)
 
 #plt.clf()
-#plt.plot(blambdas,betaval,'b',label='data')
+#plt.plot(blambdas,betaval,'b^',label='data')
 #plt.plot(blambdas,betafit,'r',label='fit')
 #plt.plot(blambdas,bparams.params[0]*1. + bparams.params[1]*blambdas+bparams.params[2]*blambdas**2.)
 #plt.show()
@@ -1728,16 +1762,16 @@ if not redfile:
     zzcetired = 'not_fitting_Halpha'
 
 print "Starting intspec.py now "
-'''
+
 case = 0 #We'll be interpolating Koester's raw models
-filenames = 'modelnames.txt'
+filenames = 'shortlist.txt'
 if os.getcwd()[0:4] == '/pro': #Check if we are on Hatteras
     path = '/projects/stars/uncphysics/josh/DA_models'
 elif os.getcwd()[0:4] == '/afs': #Check if we are on Infierno
     path = '/afs/cas.unc.edu/depts/physics_astronomy/clemens/students/group/modelfitting/Koester_06'
-ncflux,bestT,bestg = intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path,marker,redfile)
+ncflux,bestT,bestg = intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path,marker,redfile,RA,DEC,SNR,airmass)
 sys.exit()
-'''
+
 
 #================
 #Run the spectrum through the fine grid
@@ -1747,8 +1781,8 @@ filenames = 'interpolated_names.txt'
 if os.getcwd()[0:4] == '/pro': #Check if we are on Hatteras
     path = '/projects/stars/uncphysics/josh/Koester_ML2alpha08'
 elif os.getcwd()[0:4] == '/afs': #Check if we are on Infierno
-    path = '/srv/two/jtfuchs/Interpolated_Models/Koester_ML2alpha06/bottom11500_750'
-    #path = '/srv/two/jtfuchs/Interpolated_Models/Koester_ML2alpha08/bottom10000_700'
+    #path = '/srv/two/jtfuchs/Interpolated_Models/Koester_ML2alpha06/bottom11500_750'
+    path = '/srv/two/jtfuchs/Interpolated_Models/Koester_ML2alpha08/bottom10000_700'
 
-ncflux,bestT,bestg = intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path,marker,redfile)
+ncflux,bestT,bestg = intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path,marker,redfile,RA,DEC,SNR,airmass)
 
