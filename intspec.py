@@ -100,7 +100,7 @@ def multifitpseudogauss(p,fjac=None,x=None, y=None, err=None):
 #Case = 0 means using D. Koester's raw models
 #Case = 1 means using the interpolation of those models to a smaller grid.
 
-def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path,marker,redfile,RA,DEC,SNR,airmass):
+def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path,marker,redfile,RA,DEC,SNR,airmass,nexp,exptime):
 
     '''
     :DESCRIPTION: Interpolates and convolves DA models to match observed spectra. Fits pseudogaussians to DA models and compares to normalized, observed spectra. Save chi-square values.
@@ -992,7 +992,7 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
     #info.write('fitting_solutions.txt',format='ascii',append=True)
     
     f = open('fitting_solutions.txt','a') #'a' means solution will be appended to file if it exists, otherwise it will be created.
-    info = zzcetiblue + '\t' + zzcetired + '\t' +  bestmodelname + '\t' + str(bestT) + '\t' + str(bestg) + '\t' + marker + '\t' + str(bestchi) + '\t' + str(SNR) + '\t' + str(airmass) + '\t' + RA + '\t' + DEC + '\t' + now
+    info = zzcetiblue + '\t' + zzcetired + '\t' +  bestmodelname + '\t' + str(bestT) + '\t' + str(bestg) + '\t' + marker + '\t' + str(bestchi) + '\t' + str(SNR) + '\t' + str(airmass) + '\t' + str(nexp) + '\t' + str(exptime) + '\t' + RA + '\t' + DEC + '\t' + now
     f.write(info + '\n')
     f.close()
     

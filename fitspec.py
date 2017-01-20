@@ -171,8 +171,10 @@ sigmavalblue = datalistblue[0].data[3,0,:] #Sigma spectrum
 #Header values to save
 RA = datalistblue[0].header['RA']
 DEC = datalistblue[0].header['DEC']
-SNR = float(datalistblue[0].header['SNR'])
+SNR = 1.#float(datalistblue[0].header['SNR'])
 airmass = float(datalistblue[0].header['AIRMASS'])
+nexp = float(datalistblue[0].header['NCOMBINE'])
+exptime = float(datalistblue[0].header['EXPTIME'])
 
 #Read in FWHM of blue spectrum from header. Use one value only. If you change which one you use, don't forget to change it below too.
 #FWHMpixblue = datalistblue[0].header['specfwhm'] 
@@ -439,6 +441,7 @@ if redfile:
     aest[5] = 3.961723338240169312e+01
     aest[6] = 7.322514919203364503e-01
     aest[7] = 9.830814524561716704e-08
+    
     
 
 
@@ -990,6 +993,7 @@ hhi2 = np.min(np.where(hlambdas > 4195.))
 #plt.plot(hlambdas,hparams.params[0] + hparams.params[1]*hlambdas + hparams.params[2]*hlambdas**2. + hparams.params[3]*hlambdas**3.,'r')
 #plt.title(np.round(hparams.fnorm/hparams.dof,decimals=4))
 #plt.show()
+
 
 '''
 #Save the pseudogaussian fits to the spectrum as a pdf
@@ -1762,16 +1766,16 @@ if not redfile:
     zzcetired = 'not_fitting_Halpha'
 
 print "Starting intspec.py now "
-
+'''
 case = 0 #We'll be interpolating Koester's raw models
 filenames = 'shortlist.txt'
 if os.getcwd()[0:4] == '/pro': #Check if we are on Hatteras
     path = '/projects/stars/uncphysics/josh/DA_models'
 elif os.getcwd()[0:4] == '/afs': #Check if we are on Infierno
     path = '/afs/cas.unc.edu/depts/physics_astronomy/clemens/students/group/modelfitting/Koester_06'
-ncflux,bestT,bestg = intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path,marker,redfile,RA,DEC,SNR,airmass)
-sys.exit()
-
+ncflux,bestT,bestg = intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path,marker,redfile,RA,DEC,SNR,airmass,nexp,exptime)
+#sys.exit()
+'''
 
 #================
 #Run the spectrum through the fine grid
@@ -1784,5 +1788,5 @@ elif os.getcwd()[0:4] == '/afs': #Check if we are on Infierno
     #path = '/srv/two/jtfuchs/Interpolated_Models/Koester_ML2alpha06/bottom11500_750'
     path = '/srv/two/jtfuchs/Interpolated_Models/Koester_ML2alpha08/bottom10000_700'
 
-ncflux,bestT,bestg = intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path,marker,redfile,RA,DEC,SNR,airmass)
+ncflux,bestT,bestg = intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path,marker,redfile,RA,DEC,SNR,airmass,nexp,exptime)
 
