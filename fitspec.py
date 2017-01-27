@@ -151,6 +151,48 @@ def DispCalc(Pixels, alpha, theta, fr, fd, fl, zPnt):
 
 # ===========================================================================
 
+
+def find_offset(z,p):
+    return p[0] + z
+
+def fit_find_offset(p,fjac=None,x=None, y=None, z=None,err=None):
+    #Parameter values are passed in p
+    #fjac=None just means partial derivatives will not be computed.
+    model = find_offset(z,p)
+    status = 0
+    return([status,(y-model)/err])
+
+# ===========================================================================
+
+
+def fit_offset(wavelengths,data,fit,wavelength_norm,sigma_data):
+    est = np.array([np.mean(data)-np.mean(fit)])
+    fa = {'x':wavelengths,'y':data,'z':fit,'err':sigma_data}
+    offset_params = mpfit.mpfit(fit_find_offset,est,functkw=fa,maxiter=2000,ftol=1e-14,xtol=1e-13,quiet=True)
+    #print offset_params.params
+
+    #Find value at normalization wavelength
+    norm_index = np.min(np.where(wavelengths > wavelength_norm))
+    refit = find_offset(fit,offset_params.params)
+    norm_value = refit[norm_index]
+    #print norm_value
+    plt.clf()
+    plt.plot(wavelengths,data,'k')
+    plt.plot(wavelengths,fit,'r',label='old')
+    plt.plot(wavelengths,find_offset(fit,offset_params.params),'b',label='with offset')
+    plt.legend()
+    #plt.show()
+    offsetpdf.savefig()
+    return norm_value
+
+
+
+# ===========================================================================
+# ===========================================================================
+# ===========================================================================
+# ===========================================================================
+# ===========================================================================
+# Begin the actual code here
 #Now we need to read in actual spectrum.
 if len(sys.argv) == 3: 
     script, zzcetiblue, zzcetired = sys.argv
@@ -412,7 +454,7 @@ if redfile:
     
     aest = np.zeros(8)
     ######
-    '''
+    
     xes = np.array([lambdas[afitlow],lambdas[alow],lambdas[alow+10],lambdas[ahi-10],lambdas[ahi],lambdas[afithi]])
     yes = np.array([dataval[afitlow],dataval[alow],dataval[alow+10],dataval[ahi-10],dataval[ahi],dataval[afithi]])
     ap = np.polyfit(xes,yes,3)
@@ -429,10 +471,10 @@ if redfile:
     ahighidx = adiff[np.where(alambdas > 6562.79)].argmin() + len(adiff[np.where(alambdas < 6562.79)])
     aest[5] = (alambdas[ahighidx] - alambdas[alowidx]) / (2.*np.sqrt(2.*np.log(2.))) #convert FWHM to sigma
     aest[6] = 1.0 #how much of a pseudo-gaussian
-    '''
+    
     ######
     #From fit to GD 165 on 2015-04-26
-    
+    '''
     aest[0] = -3.329793545118666952e+04
     aest[1] = 1.452254867177559028e+01
     aest[2] = -2.080336009400552289e-03
@@ -441,7 +483,7 @@ if redfile:
     aest[5] = 3.961723338240169312e+01
     aest[6] = 7.322514919203364503e-01
     aest[7] = 9.830814524561716704e-08
-    
+    '''
     
 
 
@@ -451,7 +493,7 @@ betaval = dataval[bfitlow:bfithi+1]
 
 best = np.zeros(8)
 #######
-'''
+
 xes = np.array([lambdas[bfitlow],lambdas[blow],lambdas[blow+10],lambdas[bhi],lambdas[bfithi]])
 yes = np.array([dataval[bfitlow],dataval[blow],dataval[blow+10],dataval[bhi],dataval[bfithi]])
 bp = np.polyfit(xes,yes,3)
@@ -468,10 +510,10 @@ blowidx = bdiff[np.where(blambdas < 4862.71)].argmin()
 bhighidx = bdiff[np.where(blambdas > 4862.71)].argmin() + len(bdiff[np.where(blambdas < 4862.71)])
 best[5] = (blambdas[bhighidx] - blambdas[blowidx]) / (2.*np.sqrt(2.*np.log(2.))) #convert FWHM to sigma
 best[6] = 1.0 #how much of a pseudo-gaussian
-'''
+
 ##########
 #From fit to GD 165 on 2015-04-26
-
+'''
 best[0] = 3.464194462449746788e+05
 best[1] = -2.130872658512382429e+02
 best[2] = 4.378414747018435915e-02
@@ -480,7 +522,7 @@ best[4] = 4.861631463570591222e+03
 best[5] = 3.362166147167607733e+01
 best[6] = 8.720131814693605765e-01
 best[7] = -3.001151458131578997e-06
-
+'''
 
 glambdas = lambdas[gfitlow:gfithi+1]
 gsigmas = sigmaval[gfitlow:gfithi+1]
@@ -600,7 +642,8 @@ hest[22] = 1.2 #how much of a pseudo-gaussian
 
 #########################
 #Fit gamma through 11
-'''
+
+print 'Now fitting gamma through 11'
 highwavelengthlow = 3755. #3782 for H10 and 3755 for H11
 hlow = np.min(np.where(lambdas > highwavelengthlow)) 
 
@@ -610,7 +653,7 @@ hsig = sigmaval[hlow:gfithi+1]
 
 
 bigest = np.zeros(32) #Array for guess parameters
-'''
+
 '''
 #Best fit parameters from GD 165 on 2015-04-26
 bigest[0] = -1.41357212e+05
@@ -647,7 +690,7 @@ bigest[29] = 3.77059291e+03
 bigest[30] = 3.98766671e+01
 bigest[31] = 1.63020905e+00
 '''
-'''
+
 #Guess for the continuum
 xes = np.array([lambdas[H10low],lambdas[H9low],lambdas[H8low],lambdas[elow],lambdas[dlow],lambdas[dhi],lambdas[glow],lambdas[ghi]])
 yes = np.array([dataval[H10low],dataval[H9low],dataval[H8low],dataval[elow],dataval[dlow],dataval[dhi],dataval[glow],dataval[ghi]])
@@ -734,8 +777,8 @@ H11lowidx = H11diff[np.where(H11lambdas < 3770.6)].argmin()
 H11highidx = H11diff[np.where(H11lambdas > 3770.6)].argmin() + len(H11diff[np.where(H11lambdas < 3770.6)])
 bigest[30] = (H11lambdas[H11highidx] - H11lambdas[H11lowidx]) / (2.*np.sqrt(2.*np.log(2.)))
 bigest[31] = 1.2 #how much of a pseudo-gaussian
-'''
-'''
+
+
 #Constrain width of H11 pseudogaussian to be smaller than H10 pseudogaussian
 paraminfo = [{'limits':[0,0],'limited':[0,0]} for i in range(32)]
 #paraminfo[27]['limited'] = [0,1]
@@ -776,7 +819,7 @@ gamval = hval
 gsigmas = hsig
 gamfit = hfit
 
-
+'''
 #print bigest
 print hparams.params
 plt.clf()
@@ -827,15 +870,15 @@ fitpdf.close()
 #Fit gamma through 10 at once
 #highwavelengthlow = 3782. #3782 for H10 and 3755 for H11
 #hlow = np.min(np.where(lambdas > highwavelengthlow)) 
-
+'''
 hlambdas = lambdas[hlow:gfithi+1]
 hval = dataval[hlow:gfithi+1]
 hsig = sigmaval[hlow:gfithi+1]
 
 bigest = np.zeros(28)
-
+'''
 #Guesses from GD 165: 2015-04-26
-
+'''
 bigest[0] = -1.406063761484372953e+05#-1.41159057e+05
 bigest[1] = 1.003170676291885854e+02#1.00443047e+02
 bigest[2] = -2.363770735364889922e-02#-2.36076932e-02
@@ -865,7 +908,7 @@ bigest[24] = -1.930436817526830851e+02#-1.78719907e+02
 bigest[25] = 3.797740412884535090e+03#3.79796636e+03
 bigest[26] = 3.532527100706699485e+01#3.30098176e+01
 bigest[27] = 1.092804870594776379e+00#1.07062679e+00
-
+'''
 '''
 #Guess for continuum
 xes = np.array([lambdas[H10low],lambdas[H9low],lambdas[H8low],lambdas[elow],lambdas[dlow],lambdas[dhi],lambdas[glow],lambdas[ghi]])
@@ -949,7 +992,7 @@ H10highidx = H10diff[np.where(H10lambdas > 3798.8)].argmin() + len(H10diff[np.wh
 bigest[26] = (H10lambdas[H10highidx] - H10lambdas[H10lowidx]) / (2.*np.sqrt(2.*np.log(2.)))
 bigest[27] = 1.2 #how much of a pseudo-gaussian
 '''
-
+'''
 print 'Now fitting H-gamma through H10.'
 bigfa = {'x':hlambdas, 'y':hval, 'err':hsig}
 hparams = mpfit.mpfit(fitbigpseudogaussgamma,bigest,functkw=bigfa,maxiter=200,ftol=1e-12,xtol=1e-8,quiet=True)#-10,-8
@@ -982,7 +1025,7 @@ gfitlow2 = np.min(np.where(hlambdas > 4200.))
 gfithi2 = np.min(np.where(hlambdas > 4378.))
 hlow2 = np.min(np.where(hlambdas > 3778.)) 
 hhi2 = np.min(np.where(hlambdas > 4195.)) 
-
+'''
 
 #plt.clf()
 #plt.plot(hlambdas,hval,'b')
@@ -1048,6 +1091,7 @@ if redfile:
 #blambdas = lambdas[bfitlow:bfithi+1]
 #bsigmas = sigmaval[bfitlow:bfithi+1]
 #betaval = dataval[bfitlow:bfithi+1]
+
 print '\nNow fitting the H beta line.'
 bfa = {'x':blambdas, 'y':betaval, 'err':bsigmas}
 bparams = mpfit.mpfit(fitpseudogausscubic,best,functkw=bfa,maxiter=3000,ftol=1e-16,xtol=1e-10,quiet=True)
@@ -1245,6 +1289,12 @@ htenwavelengthhigh = 3817.2 #3815
 #Normalize using the pseudogaussian fits
 #======================================
 print 'Now normalizing the models using the pseudogaussian fits.'
+#Save offests of pseudogaussians
+now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M")
+marker = str(np.round(FWHM[0],decimals=2))
+endpoint = '.ms.'
+saveoffsets = 'offsets_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_' + marker + '.pdf'
+offsetpdf = PdfPages(saveoffsets)
 if redfile:
     #Start with alpha
     #Set the center of the line to the wavelength of the models.
@@ -1256,17 +1306,25 @@ if redfile:
 
     anormlow = np.min(np.where(alambdas > alphanormwavelengthlow)) #Refind the normalization points since we have shifted the line.
     anormhi = np.min(np.where(alambdas > alphanormwavelengthhigh))
-    aslope = (alphafit[anormhi] - alphafit[anormlow] ) / (alambdas[anormhi] - alambdas[anormlow])
+    #Find the offset between the pseudogaussian fit and the actual data
+    arefit_width = 10
+    afit_high = fit_offset(alambdas[anormhi-arefit_width:anormhi+arefit_width],alphaval[anormhi-arefit_width:anormhi+arefit_width],alphafit[anormhi-arefit_width:anormhi+arefit_width],alphanormwavelengthhigh,asigmas[anormhi-arefit_width:anormhi+arefit_width])
+    afit_low = fit_offset(alambdas[anormlow-arefit_width:anormlow+arefit_width],alphaval[anormlow-arefit_width:anormlow+arefit_width],alphafit[anormlow-arefit_width:anormlow+arefit_width],alphanormwavelengthlow,asigmas[anormlow-arefit_width:anormlow+arefit_width])
+    #print afit_high, afit_low
+    #afit_high = alphafit[anormhi]
+    #afit_low = alphafit[anormlow]
+    aslope = (afit_high - afit_low ) / (alambdas[anormhi] - alambdas[anormlow])
     alambdasnew = alambdas[anormlow:anormhi+1]
     alphavalnew = alphaval[anormlow:anormhi+1]
     asigmasnew = asigmas[anormlow:anormhi+1]
-    ali = aslope * (alambdasnew - alambdas[anormlow]) + alphafit[anormlow]
+    ali = aslope * (alambdasnew - alambdas[anormlow]) + afit_low
     anline = alphavalnew / ali
     asigma = asigmasnew / ali
     
     
     #plt.clf()
     #plt.plot(alambdasnew,anline)
+    #plt.plot(alambdasnew,alphavalnew)
     #plt.plot(alambdas[anormlow],alphafit[anormlow],'g^')
     #plt.plot(alambdas[anormhi],alphafit[anormhi],'g^')
     #plt.plot(alambdasnew,ali,'g')
@@ -1283,17 +1341,25 @@ blambdas = blambdas - (bcenter-4862.6510)
 
 bnormlow = np.min(np.where(blambdas > betanormwavelengthlow))
 bnormhi = np.min(np.where(blambdas > betanormwavelengthhigh))
-bslope = (betafit[bnormhi] - betafit[bnormlow] ) / (blambdas[bnormhi] - blambdas[bnormlow])
+#Find the offset between the pseudogaussian fit and the actual data
+brefit_width = 10
+bfit_high = fit_offset(blambdas[bnormhi-brefit_width:bnormhi+brefit_width],betaval[bnormhi-brefit_width:bnormhi+brefit_width],betafit[bnormhi-brefit_width:bnormhi+brefit_width],betanormwavelengthhigh,bsigmas[bnormhi-brefit_width:bnormhi+brefit_width])
+bfit_low = fit_offset(blambdas[bnormlow-brefit_width:bnormlow+brefit_width],betaval[bnormlow-brefit_width:bnormlow+brefit_width],betafit[bnormlow-brefit_width:bnormlow+brefit_width],betanormwavelengthlow,bsigmas[bnormlow-brefit_width:bnormlow+brefit_width])
+#print bfit_high, bfit_low
+#bfit_high = betafit[bnormhi]
+#bfit_low = betafit[bnormlow]
+bslope = (bfit_high - bfit_low ) / (blambdas[bnormhi] - blambdas[bnormlow])
 blambdasnew = blambdas[bnormlow:bnormhi+1]
 betavalnew = betaval[bnormlow:bnormhi+1]
 bsigmasnew = bsigmas[bnormlow:bnormhi+1]
-bli = bslope * (blambdasnew - blambdas[bnormlow]) + betafit[bnormlow]
+bli = bslope * (blambdasnew - blambdas[bnormlow]) + bfit_low
 bnline = betavalnew / bli
 bsigma = bsigmasnew / bli
 
 
 #plt.clf()
 #plt.plot(blambdasnew,bnline)
+#plt.plot(blambdasnew,betavalnew)
 #plt.plot(blambdas[bnormlow],betafit[bnormlow],'g^')
 #plt.plot(blambdas[bnormhi],betafit[bnormhi],'g^')
 #plt.plot(blambdasnew,bli,'g')
@@ -1306,11 +1372,18 @@ bsigma = bsigmasnew / bli
 glambdas = glambdas - (gcenter-4341.6550)
 gnormlow = np.min(np.where(glambdas > gammanormwavelengthlow))
 gnormhi = np.min(np.where(glambdas > gammanormwavelengthhigh))
-gslope = (gamfit[gnormhi] - gamfit[gnormlow] ) / (glambdas[gnormhi] - glambdas[gnormlow])
+#Find the offset between the pseudogaussian fit and the actual data
+grefit_width = 10
+gfit_high = fit_offset(glambdas[gnormhi-grefit_width:gnormhi+grefit_width],gamval[gnormhi-grefit_width:gnormhi+grefit_width],gamfit[gnormhi-grefit_width:gnormhi+grefit_width],gammanormwavelengthhigh,gsigmas[gnormhi-grefit_width:gnormhi+grefit_width])
+gfit_low = fit_offset(glambdas[gnormlow-grefit_width:gnormlow+grefit_width],gamval[gnormlow-grefit_width:gnormlow+grefit_width],gamfit[gnormlow-grefit_width:gnormlow+grefit_width],gammanormwavelengthlow,gsigmas[gnormlow-grefit_width:gnormlow+grefit_width])
+#print gfit_high, gfit_low
+#gfit_high = gamfit[bnormhi]
+#gfit_low = gamfit[bnormlow]
+gslope = (gfit_high - gfit_low ) / (glambdas[gnormhi] - glambdas[gnormlow])
 glambdasnew = glambdas[gnormlow:gnormhi+1]
 gamvalnew = gamval[gnormlow:gnormhi+1]
 gsigmasnew = gsigmas[gnormlow:gnormhi+1]
-gli = gslope * (glambdasnew - glambdas[gnormlow]) + gamfit[gnormlow]
+gli = gslope * (glambdasnew - glambdas[gnormlow]) + gfit_low
 gnline = gamvalnew / gli
 gsigma = gsigmasnew / gli
 
@@ -1329,26 +1402,43 @@ hlambdastemp = hlambdas - (dcenter-4102.9071)
 dnormlow = np.min(np.where(hlambdastemp > deltawavelengthlow))
 dnormhi = np.min(np.where(hlambdastemp > deltawavelengthhigh))
 dlambdas = hlambdastemp[dnormlow:dnormhi+1]
-dslope = (hfit[dnormhi] - hfit[dnormlow]) / (hlambdastemp[dnormhi] - hlambdastemp[dnormlow])
-dli = dslope * (dlambdas - dlambdas[0]) + hfit[dnormlow]
 dvaltemp = dataval[hlow:gfithi+1]
 dsigtemp = sigmaval[hlow:gfithi+1]
+#Find the offset between the pseudogaussian fit and the actual data
+drefit_width = 10
+dfit_high = fit_offset(hlambdastemp[dnormhi-drefit_width:dnormhi+drefit_width],dvaltemp[dnormhi-drefit_width:dnormhi+drefit_width],hfit[dnormhi-drefit_width:dnormhi+drefit_width],deltawavelengthhigh,dsigtemp[dnormhi-drefit_width:dnormhi+drefit_width])
+dfit_low = fit_offset(hlambdastemp[dnormlow-drefit_width:dnormlow+drefit_width],dvaltemp[dnormlow-drefit_width:dnormlow+drefit_width],hfit[dnormlow-drefit_width:dnormlow+drefit_width],deltawavelengthlow,dsigtemp[dnormlow-drefit_width:dnormlow+drefit_width])
+#print dfit_high, dfit_low
+#dfit_high = hfit[dnormhi]
+#dfit_low = hfit[dnormlow]
+dslope = (dfit_high - dfit_low) / (hlambdastemp[dnormhi] - hlambdastemp[dnormlow])
+dli = dslope * (dlambdas - dlambdas[0]) + dfit_low
 dnline = dvaltemp[dnormlow:dnormhi+1] / dli
 dsigma = dsigtemp[dnormlow:dnormhi+1] / dli
 
+#plt.plot(hlambdastemp,dvaltemp,'k')
 #plt.plot(hlambdastemp[dnormlow],hfit[dnormlow],'g^')
 #plt.plot(hlambdastemp[dnormhi],hfit[dnormhi],'g^')
 #plt.plot(dlambdas,dli,'g')
+#plt.show()
+#exit()
 
 #elambdas = elambdas - (ecenter-3971.198)
 hlambdastemp = hlambdas - (ecenter-3971.1751)
 enormlow = np.min(np.where(hlambdastemp > epsilonwavelengthlow))
 enormhi = np.min(np.where(hlambdastemp > epsilonwavelengthhigh))
 elambdas = hlambdastemp[enormlow:enormhi+1]
-eslope = (hfit[enormhi] - hfit[enormlow] ) / (hlambdastemp[enormhi] - hlambdastemp[enormlow])
-eli = eslope * (elambdas - elambdas[0]) + hfit[enormlow]
 evaltemp = dataval[hlow:hhi+1]
 esigtemp = sigmaval[hlow:hhi+1]
+#Find the offset between the pseudogaussian fit and the actual data
+erefit_width = 10 #pixels
+efit_high = fit_offset(hlambdastemp[enormhi-erefit_width:enormhi+erefit_width],evaltemp[enormhi-erefit_width:enormhi+erefit_width],hfit[enormhi-erefit_width:enormhi+erefit_width],epsilonwavelengthhigh,esigtemp[enormhi-erefit_width:enormhi+erefit_width])
+efit_low = fit_offset(hlambdastemp[enormlow-erefit_width:enormlow+erefit_width],evaltemp[enormlow-erefit_width:enormlow+erefit_width],hfit[enormlow-erefit_width:enormlow+erefit_width],epsilonwavelengthlow,esigtemp[enormlow-erefit_width:enormlow+erefit_width])
+#print efit_high, efit_low
+#efit_high = hfit[enormhi]
+#efit_low = hfit[enormlow]
+eslope = (efit_high - efit_low ) / (hlambdastemp[enormhi] - hlambdastemp[enormlow])
+eli = eslope * (elambdas - elambdas[0]) + efit_low
 enline = evaltemp[enormlow:enormhi+1] / eli
 esigma = esigtemp[enormlow:enormhi+1] / eli
 
@@ -1361,10 +1451,17 @@ hlambdastemp = hlambdas - (H8center-3890.1461)
 H8normlow = np.min(np.where(hlambdastemp > heightwavelengthlow))
 H8normhi = np.min(np.where(hlambdastemp > heightwavelengthhigh))
 H8lambdas = hlambdastemp[H8normlow:H8normhi+1]
-H8slope = (hfit[H8normhi] - hfit[H8normlow] ) / (hlambdastemp[H8normhi] - hlambdastemp[H8normlow])
-H8li = H8slope * (H8lambdas - H8lambdas[0]) + hfit[H8normlow]
 H8valtemp = dataval[hlow:hhi+1]
 H8sigtemp = sigmaval[hlow:hhi+1]
+#Find the offset between the pseudogaussian fit and the actual data
+H8refit_width = 10 #pixels
+H8fit_high = fit_offset(hlambdastemp[H8normhi-H8refit_width:H8normhi+H8refit_width],H8valtemp[H8normhi-H8refit_width:H8normhi+H8refit_width],hfit[H8normhi-H8refit_width:H8normhi+H8refit_width],heightwavelengthhigh,H8sigtemp[H8normhi-H8refit_width:H8normhi+H8refit_width])
+H8fit_low = fit_offset(hlambdastemp[H8normlow-H8refit_width:H8normlow+H8refit_width],H8valtemp[H8normlow-H8refit_width:H8normlow+H8refit_width],hfit[H8normlow-H8refit_width:H8normlow+H8refit_width],heightwavelengthlow,H8sigtemp[H8normlow-H8refit_width:H8normlow+H8refit_width])
+#print H8fit_high, H8fit_low
+#H8fit_high = hfit[H8normhi]
+#H8fit_low = hfit[H8normlow]
+H8slope = (H8fit_high - H8fit_low ) / (hlambdastemp[H8normhi] - hlambdastemp[H8normlow])
+H8li = H8slope * (H8lambdas - H8lambdas[0]) + H8fit_low
 H8nline = H8valtemp[H8normlow:H8normhi+1] / H8li
 H8sigma = H8sigtemp[H8normlow:H8normhi+1] / H8li
 
@@ -1378,10 +1475,17 @@ hlambdastemp = hlambdas - (H9center- 3836.4726)
 H9normlow = np.min(np.where(hlambdastemp > hninewavelengthlow))
 H9normhi = np.min(np.where(hlambdastemp > hninewavelengthhigh))
 H9lambdas = hlambdastemp[H9normlow:H9normhi+1]
-H9slope = (hfit[H9normhi] - hfit[H9normlow] ) / (hlambdastemp[H9normhi] - hlambdastemp[H9normlow])
-H9li = H9slope * (H9lambdas - H9lambdas[0]) + hfit[H9normlow]
 H9valtemp = dataval[hlow:hhi+1]
 H9sigtemp = sigmaval[hlow:hhi+1]
+#Find the offset between the pseudogaussian fit and the actual data
+H9refit_width = 10 #pixels
+H9fit_high = fit_offset(hlambdastemp[H9normhi-H9refit_width:H9normhi+H9refit_width],H9valtemp[H9normhi-H9refit_width:H9normhi+H9refit_width],hfit[H9normhi-H9refit_width:H9normhi+H9refit_width],hninewavelengthhigh,H9sigtemp[H9normhi-H9refit_width:H9normhi+H9refit_width])
+H9fit_low = fit_offset(hlambdastemp[H9normlow-H9refit_width:H9normlow+H9refit_width],H9valtemp[H9normlow-H9refit_width:H9normlow+H9refit_width],hfit[H9normlow-H9refit_width:H9normlow+H9refit_width],hninewavelengthlow,H9sigtemp[H9normlow-H9refit_width:H9normlow+H9refit_width])
+#print H9fit_high, H9fit_low
+#H9fit_high = hfit[H9normhi]
+#H9fit_low = hfit[H9normlow]
+H9slope = (H9fit_high - H9fit_low ) / (hlambdastemp[H9normhi] - hlambdastemp[H9normlow])
+H9li = H9slope * (H9lambdas - H9lambdas[0]) + H9fit_low
 H9nline = H9valtemp[H9normlow:H9normhi+1] / H9li
 H9sigma = H9sigtemp[H9normlow:H9normhi+1] / H9li
 
@@ -1394,13 +1498,31 @@ hlambdastemp = hlambdas - (H10center-3798.9799)
 H10normlow = np.min(np.where(hlambdastemp > htenwavelengthlow))
 H10normhi = np.min(np.where(hlambdastemp > htenwavelengthhigh))
 H10lambdas = hlambdastemp[H10normlow:H10normhi+1]
-H10slope = (hfit[H10normhi] - hfit[H10normlow] ) / (hlambdastemp[H10normhi] - hlambdastemp[H10normlow])
-H10li = H10slope * (H10lambdas - H10lambdas[0]) + hfit[H10normlow]
 H10valtemp = dataval[hlow:hhi+1]
 H10sigtemp = sigmaval[hlow:hhi+1]
+#Find the offset between the pseudogaussian fit and the actual data
+H10refit_width = 10 #pixels
+H10fit_high = fit_offset(hlambdastemp[H10normhi-H10refit_width:H10normhi+H10refit_width],H10valtemp[H10normhi-H10refit_width:H10normhi+H10refit_width],hfit[H10normhi-H10refit_width:H10normhi+H10refit_width],htenwavelengthhigh,H10sigtemp[H10normhi-H10refit_width:H10normhi+H10refit_width])
+
+
+#Since H10 is close to the bottom of our array, we must be careful with setting the index limits
+if H10normlow-H10refit_width < 0:
+    H10index_low = 0
+    H10index_high = 11
+    #print 'using: ', H10index_low, H10index_high
+else:
+    H10index_low = H10normlow-H10refit_width
+    H10index_high = H10normlow+H10refit_width
+    #print 'Now using: ', H10index_low, H10index_high
+H10fit_low = fit_offset(hlambdastemp[H10index_low:H10index_high],H10valtemp[H10index_low:H10index_high],hfit[H10index_low:H10index_high],htenwavelengthlow,H10sigtemp[H10index_low:H10index_high])
+#print H10fit_high, H10fit_low
+#H10fit_high = hfit[H10normhi]
+#H10fit_low = hfit[H10normlow]
+H10slope = (H10fit_high - H10fit_low ) / (hlambdastemp[H10normhi] - hlambdastemp[H10normlow])
+H10li = H10slope * (H10lambdas - H10lambdas[0]) + H10fit_low
 H10nline = H10valtemp[H10normlow:H10normhi+1] / H10li
 H10sigma = H10sigtemp[H10normlow:H10normhi+1] / H10li
-
+offsetpdf.close()
 #plt.plot(hlambdastemp[H10normlow],hfit[H10normlow],'g^')
 #plt.plot(hlambdastemp[H10normhi],hfit[H10normhi],'g^')
 #plt.plot(H10lambdas,H10li,'g')
