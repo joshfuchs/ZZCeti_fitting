@@ -53,6 +53,7 @@ else:
 import mpfit
 from intspec import intspecs
 import pyfits as fits # Infierno doesn't support astropy for some reason so using pyfits
+from glob import glob
 #import astropy.io.fits as pf
 
 
@@ -218,13 +219,21 @@ airmass = float(datalistblue[0].header['AIRMASS'])
 nexp = float(datalistblue[0].header['NCOMBINE'])
 exptime = float(datalistblue[0].header['EXPTIME'])
 
-#Read in FWHM of blue spectrum from header. Use one value only. If you change which one you use, don't forget to change it below too.
-#FWHMpixblue = datalistblue[0].header['specfwhm'] 
-#FWHMpixblue = FWHMpixblue * np.ones(len(datavalblue))
 
-#Read in FWHM of blue spectrum from npy binary file. Use changing values.
-FWHMbluefilename = zzcetiblue[0:zzcetiblue.find('w')] + zzcetiblue[zzcetiblue.find('t'):zzcetiblue.find('_flux')] + '_poly.npy'
-FWHMpixblue = np.load(FWHMbluefilename)
+#Read in FWHM of blue spectrum from npy binary file. Use changing values. If no file exists, use linearized wavelengths
+try:
+    FWHMbluefilename_struc = zzcetiblue[0:zzcetiblue.find('w')] + '*' + zzcetiblue[zzcetiblue.find('b'):zzcetiblue.find('_flux')] + '_poly.npy'
+    FWHMbluefilename = glob(FWHMbluefilename_struc)
+    FWHMpixblue = np.load(FWHMbluefilename[0])
+    print 'Found file: ', FWHMbluefilename[0]
+    print 'Using ', FWHMbluefilename[0], ' for convolution'
+except:
+    #Read in FWHM of blue spectrum from header. Use one value only. If you change which one you use, don't forget to change it below too.
+    FWHMpixblue_val = datalistblue[0].header['specfwhm'] 
+    FWHMpixblue = FWHMpixblue_val * np.ones(len(datavalblue))
+    print  'Using ', FWHMpixblue_val, ' for convolution'
+
+
 
 '''
 #Linearized Wavelengths
@@ -252,13 +261,12 @@ nxblue= np.size(datavalblue)#spec_data[0]
 PixelsBlue= biningblue*(np.arange(0,nxblue,1)+trim_offset_blue)
 lambdasblue = DispCalc(PixelsBlue, alphablue, thetablue, frblue, fdblue, flblue, zPntblue)
 
-
 #Mask out the Littrow Ghost if 'LTTROW' is in the image header
 try:
     print 'Masking littrow ghost.'
     littrow_ghost = datalistblue[0].header['LITTROW']
-    littrow_mask_low = int(float(littrow_ghost[1:len(littrow_ghost)-1].split(',')[0]) - float(trim_offset_blue))
-    littrow_mask_high = int(float(littrow_ghost[1:len(littrow_ghost)-1].split(',')[1]) - float(trim_offset_blue))
+    littrow_mask_low = int(float(littrow_ghost[1:len(littrow_ghost)-1].split(',')[0]))# - float(trim_offset_blue))
+    littrow_mask_high = int(float(littrow_ghost[1:len(littrow_ghost)-1].split(',')[1]))# - float(trim_offset_blue))
     lambdasblue = np.concatenate((lambdasblue[:littrow_mask_low+1],lambdasblue[littrow_mask_high:]))
     datavalblue = np.concatenate((datavalblue[:littrow_mask_low+1],datavalblue[littrow_mask_high:]))
     sigmavalblue = np.concatenate((sigmavalblue[:littrow_mask_low+1],sigmavalblue[littrow_mask_high:]))
@@ -272,10 +280,18 @@ if redfile:
     datalistred = fits.open(zzcetired)
     datavalred = datalistred[0].data[0,0,:] #data[0,0,:] is optimally extracted, data[2,0,:] is sky
     sigmavalred = datalistred[0].data[3,0,:] #Sigma spectrum
-    #FWHMpixred = datalistred[0].header['specfwhm'] 
-    #FWHMpixred = FWHMpixred * np.ones(len(datavalred))
-    FWHMredfilename = zzcetired[0:zzcetired.find('w')] + zzcetired[zzcetired.find('t'):zzcetired.find('_flux')] + '_poly.npy'
-    FWHMpixred = np.load(FWHMredfilename)
+    #Read in FWHM of red spectrum from npy binary file. Use changing values. If no file exists, use linearized wavelengths
+    try:
+        FWHMredfilename_struc = zzcetired[0:zzcetired.find('w')] + '*' + zzcetired[zzcetired.find('b'):zzcetired.find('_flux')] + '_poly.npy'
+        FWHMredfilename = glob(FWHMredfilename_struc)
+        FWHMpixred = np.load(FWHMredfilename[0])
+        print 'Found file: ', FWHMredfilename[0]
+        print 'Using ', FWHMredfilename[0], ' for convolution'
+    except:
+        #Read in FWHM of red spectrum from header. Use one value only. If you change which one you use, don't forget to change it below too.
+        FWHMpixred_val = datalistred[0].header['specfwhm'] 
+        FWHMpixred = FWHMpixred_val * np.ones(len(datavalred))
+        print  'Using ', FWHMpixred_val, ' for convolution'
     '''
     #Linearized red wavelengths
     wav0red = datalistred[0].header['crval1']
@@ -866,11 +882,11 @@ fitpdf.close()
 
 ########################
 #########################
-
+'''
 #Fit gamma through 10 at once
 #highwavelengthlow = 3782. #3782 for H10 and 3755 for H11
 #hlow = np.min(np.where(lambdas > highwavelengthlow)) 
-'''
+
 hlambdas = lambdas[hlow:gfithi+1]
 hval = dataval[hlow:gfithi+1]
 hsig = sigmaval[hlow:gfithi+1]
@@ -1878,6 +1894,16 @@ ymin, ymax = axes.get_ylim()
 plt.plot(hlambdas,hval-hfit + (hfit.min()+ymin)/2.5,'k')
 plt.title(zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + ', R. chi^2: ' + str(np.round(hparams.fnorm/hparams.dof,decimals=4)))
 fitpdf.savefig()
+try:
+    stitchpoint = datalistblue[0].header['STITCHLO']
+    plt.clf()
+    plt.plot(hlambdas[stitchpoint-25:stitchpoint+26],hval[stitchpoint-25:stitchpoint+26],'b')
+    plt.plot(hlambdas[stitchpoint-25:stitchpoint+26],hfit[stitchpoint-25:stitchpoint+26],'r')
+    plt.axvline(hlambdas[stitchpoint],ymin=0,ymax=0.2,linewidth=4,color='k')
+    plt.title('Data and fit surrounding stitch location in flat field')
+    fitpdf.savefig()
+except:
+    pass
 fitpdf.close()
 if zzcetiblue[0] == '.':
     os.chdir(home_directory)
@@ -1890,20 +1916,20 @@ if not redfile:
 print "Starting intspec.py now "
 '''
 case = 0 #We'll be interpolating Koester's raw models
-filenames = 'shortlist.txt'
+filenames = 'modelnames.txt'
 if os.getcwd()[0:4] == '/pro': #Check if we are on Hatteras
     path = '/projects/stars/uncphysics/josh/DA_models'
 elif os.getcwd()[0:4] == '/afs': #Check if we are on Infierno
     path = '/afs/cas.unc.edu/depts/physics_astronomy/clemens/students/group/modelfitting/Koester_06'
 ncflux,bestT,bestg = intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path,marker,redfile,RA,DEC,SNR,airmass,nexp,exptime)
-#sys.exit()
+sys.exit()
 '''
 
 #================
 #Run the spectrum through the fine grid
 case = 1 #We'll be comparing our new grid to the spectrum.
 filenames = 'interpolated_names.txt'
-
+#filenames = 'short_list.txt'
 if os.getcwd()[0:4] == '/pro': #Check if we are on Hatteras
     path = '/projects/stars/uncphysics/josh/Koester_ML2alpha08'
 elif os.getcwd()[0:4] == '/afs': #Check if we are on Infierno
