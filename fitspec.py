@@ -658,7 +658,7 @@ hest[22] = 1.2 #how much of a pseudo-gaussian
 
 #########################
 #Fit gamma through 11
-
+'''
 print 'Now fitting gamma through 11'
 highwavelengthlow = 3755. #3782 for H10 and 3755 for H11
 hlow = np.min(np.where(lambdas > highwavelengthlow)) 
@@ -669,7 +669,7 @@ hsig = sigmaval[hlow:gfithi+1]
 
 
 bigest = np.zeros(32) #Array for guess parameters
-
+'''
 '''
 #Best fit parameters from GD 165 on 2015-04-26
 bigest[0] = -1.41357212e+05
@@ -706,7 +706,7 @@ bigest[29] = 3.77059291e+03
 bigest[30] = 3.98766671e+01
 bigest[31] = 1.63020905e+00
 '''
-
+'''
 #Guess for the continuum
 xes = np.array([lambdas[H10low],lambdas[H9low],lambdas[H8low],lambdas[elow],lambdas[dlow],lambdas[dhi],lambdas[glow],lambdas[ghi]])
 yes = np.array([dataval[H10low],dataval[H9low],dataval[H8low],dataval[elow],dataval[dlow],dataval[dhi],dataval[glow],dataval[ghi]])
@@ -793,8 +793,8 @@ H11lowidx = H11diff[np.where(H11lambdas < 3770.6)].argmin()
 H11highidx = H11diff[np.where(H11lambdas > 3770.6)].argmin() + len(H11diff[np.where(H11lambdas < 3770.6)])
 bigest[30] = (H11lambdas[H11highidx] - H11lambdas[H11lowidx]) / (2.*np.sqrt(2.*np.log(2.)))
 bigest[31] = 1.2 #how much of a pseudo-gaussian
-
-
+'''
+'''
 #Constrain width of H11 pseudogaussian to be smaller than H10 pseudogaussian
 paraminfo = [{'limits':[0,0],'limited':[0,0]} for i in range(32)]
 #paraminfo[27]['limited'] = [0,1]
@@ -834,7 +834,7 @@ glambdas = hlambdas
 gamval = hval
 gsigmas = hsig
 gamfit = hfit
-
+'''
 '''
 #print bigest
 print hparams.params
@@ -882,7 +882,7 @@ fitpdf.close()
 
 ########################
 #########################
-'''
+
 #Fit gamma through 10 at once
 #highwavelengthlow = 3782. #3782 for H10 and 3755 for H11
 #hlow = np.min(np.where(lambdas > highwavelengthlow)) 
@@ -892,7 +892,7 @@ hval = dataval[hlow:gfithi+1]
 hsig = sigmaval[hlow:gfithi+1]
 
 bigest = np.zeros(28)
-'''
+
 #Guesses from GD 165: 2015-04-26
 '''
 bigest[0] = -1.406063761484372953e+05#-1.41159057e+05
@@ -925,7 +925,7 @@ bigest[25] = 3.797740412884535090e+03#3.79796636e+03
 bigest[26] = 3.532527100706699485e+01#3.30098176e+01
 bigest[27] = 1.092804870594776379e+00#1.07062679e+00
 '''
-'''
+
 #Guess for continuum
 xes = np.array([lambdas[H10low],lambdas[H9low],lambdas[H8low],lambdas[elow],lambdas[dlow],lambdas[dhi],lambdas[glow],lambdas[ghi]])
 yes = np.array([dataval[H10low],dataval[H9low],dataval[H8low],dataval[elow],dataval[dlow],dataval[dhi],dataval[glow],dataval[ghi]])
@@ -1007,11 +1007,11 @@ H10lowidx = H10diff[np.where(H10lambdas < 3798.8)].argmin()
 H10highidx = H10diff[np.where(H10lambdas > 3798.8)].argmin() + len(H10diff[np.where(H10lambdas < 3798.8)])
 bigest[26] = (H10lambdas[H10highidx] - H10lambdas[H10lowidx]) / (2.*np.sqrt(2.*np.log(2.)))
 bigest[27] = 1.2 #how much of a pseudo-gaussian
-'''
-'''
+
+
 print 'Now fitting H-gamma through H10.'
 bigfa = {'x':hlambdas, 'y':hval, 'err':hsig}
-hparams = mpfit.mpfit(fitbigpseudogaussgamma,bigest,functkw=bigfa,maxiter=200,ftol=1e-12,xtol=1e-8,quiet=True)#-10,-8
+hparams = mpfit.mpfit(fitbigpseudogaussgamma,bigest,functkw=bigfa,maxiter=300,ftol=1e-12,xtol=1e-8,quiet=True)#-10,-8
 #print bigest
 print hparams.status, hparams.niter, hparams.fnorm, hparams.dof, hparams.fnorm/hparams.dof
 #print bigest
@@ -1041,7 +1041,7 @@ gfitlow2 = np.min(np.where(hlambdas > 4200.))
 gfithi2 = np.min(np.where(hlambdas > 4378.))
 hlow2 = np.min(np.where(hlambdas > 3778.)) 
 hhi2 = np.min(np.where(hlambdas > 4195.)) 
-'''
+
 
 #plt.clf()
 #plt.plot(hlambdas,hval,'b')
@@ -1087,7 +1087,7 @@ if redfile:
     #alphaval = dataval[afitlow:afithi+1]
     print 'Now fitting the H alpha line.'
     afa = {'x':alambdas, 'y':alphaval, 'err':asigmas}
-    aparams = mpfit.mpfit(fitpseudogausscubic,aest,functkw=afa,maxiter=2000,ftol=1e-14,xtol=1e-13,quiet=True)
+    aparams = mpfit.mpfit(fitpseudogausscubic,aest,functkw=afa,maxiter=3000,ftol=1e-14,xtol=1e-13,quiet=True)
     print 'Number of iterations: ', aparams.niter
     acenter = aparams.params[4]
     alphafit = pseudogausscubic(alambdas,aparams.params)
@@ -1110,7 +1110,7 @@ if redfile:
 
 print '\nNow fitting the H beta line.'
 bfa = {'x':blambdas, 'y':betaval, 'err':bsigmas}
-bparams = mpfit.mpfit(fitpseudogausscubic,best,functkw=bfa,maxiter=3000,ftol=1e-16,xtol=1e-10,quiet=True)
+bparams = mpfit.mpfit(fitpseudogausscubic,best,functkw=bfa,maxiter=4000,ftol=1e-16,xtol=1e-10,quiet=True)
 print 'Number of iterations: ', bparams.niter
 print bparams.status, bparams.niter, bparams.fnorm, bparams.dof
 bcenter = bparams.params[4]
@@ -1928,8 +1928,8 @@ sys.exit()
 #================
 #Run the spectrum through the fine grid
 case = 1 #We'll be comparing our new grid to the spectrum.
-filenames = 'interpolated_names.txt'
-#filenames = 'short_list.txt'
+#filenames = 'interpolated_names.txt'
+filenames = 'short_list.txt'
 if os.getcwd()[0:4] == '/pro': #Check if we are on Hatteras
     path = '/projects/stars/uncphysics/josh/Koester_ML2alpha08'
 elif os.getcwd()[0:4] == '/afs': #Check if we are on Infierno
