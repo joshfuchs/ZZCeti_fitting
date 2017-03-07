@@ -1514,6 +1514,10 @@ H9sigma = H9sigtemp[H9normlow:H9normhi+1] / H9li
 #plt.plot(hlambdastemp[H9normhi],hfit[H9normhi],'g^')
 #plt.plot(H9lambdas,H9li,'g')
 
+#Check if H10 fit is too low, if so, offset from H9
+if H10center < 3780.:
+    H10center = H9center - 37.493
+
 #H10lambdas = H10lambdas - (H10center-3797.909)
 hlambdastemp = hlambdas - (H10center-3798.9799)
 H10normlow = np.min(np.where(hlambdastemp > htenwavelengthlow))
