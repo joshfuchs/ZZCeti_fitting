@@ -470,7 +470,7 @@ if redfile:
     
     aest = np.zeros(8)
     ######
-    
+    '''
     xes = np.array([lambdas[afitlow],lambdas[alow],lambdas[alow+10],lambdas[ahi-10],lambdas[ahi],lambdas[afithi]])
     yes = np.array([dataval[afitlow],dataval[alow],dataval[alow+10],dataval[ahi-10],dataval[ahi],dataval[afithi]])
     ap = np.polyfit(xes,yes,3)
@@ -487,19 +487,19 @@ if redfile:
     ahighidx = adiff[np.where(alambdas > 6562.79)].argmin() + len(adiff[np.where(alambdas < 6562.79)])
     aest[5] = (alambdas[ahighidx] - alambdas[alowidx]) / (2.*np.sqrt(2.*np.log(2.))) #convert FWHM to sigma
     aest[6] = 1.0 #how much of a pseudo-gaussian
-    
+    '''
     ######
     #From fit to GD 165 on 2015-04-26
-    '''
-    aest[0] = -3.329793545118666952e+04
-    aest[1] = 1.452254867177559028e+01
-    aest[2] = -2.080336009400552289e-03
-    aest[3] = -1.068782717847220596e+02
-    aest[4] = 6.564426653206536685e+03
-    aest[5] = 3.961723338240169312e+01
-    aest[6] = 7.322514919203364503e-01
-    aest[7] = 9.830814524561716704e-08
-    '''
+    
+    aest[0] = 6.55710438e+04
+    aest[1] =-3.01859244e+01
+    aest[2] = 4.65757107e-03
+    aest[3] = -1.03978059e+02
+    aest[4] = 6.56457033e+03
+    aest[5] =3.71607024e+01
+    aest[6] = 7.29274380e-01
+    aest[7] =-2.40131150e-07
+    
     
 
 
@@ -509,7 +509,7 @@ betaval = dataval[bfitlow:bfithi+1]
 
 best = np.zeros(8)
 #######
-
+'''
 xes = np.array([lambdas[bfitlow],lambdas[blow],lambdas[blow+10],lambdas[bhi],lambdas[bfithi]])
 yes = np.array([dataval[bfitlow],dataval[blow],dataval[blow+10],dataval[bhi],dataval[bfithi]])
 bp = np.polyfit(xes,yes,3)
@@ -526,19 +526,19 @@ blowidx = bdiff[np.where(blambdas < 4862.71)].argmin()
 bhighidx = bdiff[np.where(blambdas > 4862.71)].argmin() + len(bdiff[np.where(blambdas < 4862.71)])
 best[5] = (blambdas[bhighidx] - blambdas[blowidx]) / (2.*np.sqrt(2.*np.log(2.))) #convert FWHM to sigma
 best[6] = 1.0 #how much of a pseudo-gaussian
-
+'''
 ##########
 #From fit to GD 165 on 2015-04-26
-'''
-best[0] = 3.464194462449746788e+05
-best[1] = -2.130872658512382429e+02
-best[2] = 4.378414747018435915e-02
-best[3] = -2.988719360409691035e+02
-best[4] = 4.861631463570591222e+03
-best[5] = 3.362166147167607733e+01
-best[6] = 8.720131814693605765e-01
-best[7] = -3.001151458131578997e-06
-'''
+
+best[0] = 2.94474405e+05
+best[1] = -1.81068634e+02
+best[2] = 3.72112471e-02
+best[3] = -2.94650570e+02
+best[4] =4.86191879e+03
+best[5] = 3.22064185e+01
+best[6] =8.86479782e-01
+best[7] = -2.55179334e-06
+
 
 glambdas = lambdas[gfitlow:gfithi+1]
 gsigmas = sigmaval[gfitlow:gfithi+1]
@@ -894,38 +894,38 @@ hsig = sigmaval[hlow:gfithi+1]
 bigest = np.zeros(28)
 
 #Guesses from GD 165: 2015-04-26
-'''
-bigest[0] = -1.406063761484372953e+05#-1.41159057e+05
-bigest[1] = 1.003170676291885854e+02#1.00443047e+02
-bigest[2] = -2.363770735364889922e-02#-2.36076932e-02
-bigest[3] = 1.848214768237999889e-06#1.84139110e-06
-bigpp = np.poly1d([bigest[3],bigest[2],bigest[1],bigest[0]])
-bigest[4] = -4.040590087943886033e+02#-4.06035255e+02
-bigest[5] = 4.340925249063438059e+03#4.34092583e+03
-bigest[6] = 2.708817417035567132e+01#2.72522312e+01
-bigest[7] = 9.878402835308270902e-01#9.83112306e-01
-bigest[8] = -4.794659311360872493e+02#-4.78134615e+02
-bigest[9] = 4.102701783225264080e+03#4.10272287e+03
-bigest[10] = 2.709696664077381456e+01#2.69840743e+01
-bigest[11] = 9.631399125660804472e-01#9.61424635e-01
-bigest[12] = -4.166094422675674878e+02#-4.11042483e+02
-bigest[13] = 3.971486630382756175e+03#3.97149906e+03
-bigest[14] = 2.116735070719211720e+01#2.08403895e+01
-bigest[15] = 1.130689652723139815e+00#1.14000247e+00
-bigest[16] = -3.106269362989938259e+02#-3.07128449e+02
-bigest[17] = 3.889903866559738617e+03#3.88991856e+03
-bigest[18] = 1.782651953604086259e+01#1.76330401e+01
-bigest[19] = 1.223808191795874301e+00#1.22352091e+00
-bigest[20] = -1.487979807794951057e+02#-1.48658941e+02
-bigest[21] = 3.837355731272535195e+03#3.83730915e+03
-bigest[22] = 1.148214333621755578e+01#1.14755484e+01
-bigest[23] = 1.425091059538869054e+00#1.42376957e+00
-bigest[24] = -1.930436817526830851e+02#-1.78719907e+02
-bigest[25] = 3.797740412884535090e+03#3.79796636e+03
-bigest[26] = 3.532527100706699485e+01#3.30098176e+01
-bigest[27] = 1.092804870594776379e+00#1.07062679e+00
-'''
 
+bigest[0] = -1.40049986e+05
+bigest[1] = 1.00197634e+02
+bigest[2] = -2.36678694e-02
+bigest[3] = 1.85471480e-06
+bigpp = np.poly1d([bigest[3],bigest[2],bigest[1],bigest[0]])
+bigest[4] = -4.06230663e+02
+bigest[5] = 4.34109176e+03
+bigest[6] = 2.76921973e+01
+bigest[7] = 9.78626650e-01
+bigest[8] =-4.85132845e+02
+bigest[9] = 4.10278586e+03
+bigest[10] =2.76129635e+01
+bigest[11] =9.52884929e-01
+bigest[12] =-4.22115667e+02
+bigest[13] = 3.97153282e+03
+bigest[14] =2.11737451e+01
+bigest[15] = 1.12639940e+00
+bigest[16] =-3.16990734e+02
+bigest[17] =3.89012946e+03
+bigest[18] =1.80330308e+01
+bigest[19] = 1.18346199e+00
+bigest[20] =-1.47793093e+02
+bigest[21] =3.83743302e+03
+bigest[22] =1.13154407e+01
+bigest[23] =1.35033896e+00
+bigest[24] =-2.17402577e+02
+bigest[25] =3.79732448e+03
+bigest[26] =3.98047434e+01
+bigest[27] =1.13178448e+00
+
+'''
 #Guess for continuum
 xes = np.array([lambdas[H10low],lambdas[H9low],lambdas[H8low],lambdas[elow],lambdas[dlow],lambdas[dhi],lambdas[glow],lambdas[ghi]])
 yes = np.array([dataval[H10low],dataval[H9low],dataval[H8low],dataval[elow],dataval[dlow],dataval[dhi],dataval[glow],dataval[ghi]])
@@ -1007,7 +1007,7 @@ H10lowidx = H10diff[np.where(H10lambdas < 3798.8)].argmin()
 H10highidx = H10diff[np.where(H10lambdas > 3798.8)].argmin() + len(H10diff[np.where(H10lambdas < 3798.8)])
 bigest[26] = (H10lambdas[H10highidx] - H10lambdas[H10lowidx]) / (2.*np.sqrt(2.*np.log(2.)))
 bigest[27] = 1.2 #how much of a pseudo-gaussian
-
+'''
 
 print 'Now fitting H-gamma through H10.'
 bigfa = {'x':hlambdas, 'y':hval, 'err':hsig}
@@ -1093,7 +1093,7 @@ if redfile:
     alphafit = pseudogausscubic(alambdas,aparams.params)
     alphavariation = np.sum((alphafit - alphaval)**2.)
     print aparams.status, aparams.niter, aparams.fnorm, aparams.dof
-    
+    print aparams.params
     
     #plt.clf()
     #plt.plot(alambdas,alphaval,'b')
@@ -1113,6 +1113,8 @@ bfa = {'x':blambdas, 'y':betaval, 'err':bsigmas}
 bparams = mpfit.mpfit(fitpseudogausscubic,best,functkw=bfa,maxiter=4000,ftol=1e-16,xtol=1e-10,quiet=True)
 print 'Number of iterations: ', bparams.niter
 print bparams.status, bparams.niter, bparams.fnorm, bparams.dof
+print bparams.params
+
 bcenter = bparams.params[4]
 betafit = pseudogausscubic(blambdas,bparams.params)
 betavariation = np.sum((betafit - betaval)**2.)
