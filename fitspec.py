@@ -1309,6 +1309,11 @@ print 'Now normalizing the models using the pseudogaussian fits.'
 now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M")
 marker = str(np.round(FWHM[0],decimals=2))
 endpoint = '.ms.'
+
+#If spectra are in a different directory, change to that directory
+home_directory = os.getcwd()
+if zzcetiblue[0] == '.':
+    os.chdir(zzcetiblue[0:zzcetiblue.find('w')])
 saveoffsets = 'offsets_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_' + marker + '.pdf'
 offsetpdf = PdfPages(saveoffsets)
 if redfile:
@@ -1539,6 +1544,8 @@ H10li = H10slope * (H10lambdas - H10lambdas[0]) + H10fit_low
 H10nline = H10valtemp[H10normlow:H10normhi+1] / H10li
 H10sigma = H10sigtemp[H10normlow:H10normhi+1] / H10li
 offsetpdf.close()
+if zzcetiblue[0] == '.':
+    os.chdir(home_directory)
 #plt.plot(hlambdastemp[H10normlow],hfit[H10normlow],'g^')
 #plt.plot(hlambdastemp[H10normhi],hfit[H10normhi],'g^')
 #plt.plot(H10lambdas,H10li,'g')
