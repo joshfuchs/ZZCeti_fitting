@@ -1941,8 +1941,8 @@ sys.exit()
 #================
 #Run the spectrum through the fine grid
 case = 1 #We'll be comparing our new grid to the spectrum.
-#filenames = 'interpolated_names.txt'
-filenames = 'short_list.txt'
+filenames = 'interpolated_names.txt'
+#filenames = 'short_list.txt'
 if os.getcwd()[0:4] == '/pro': #Check if we are on Hatteras
     path = '/projects/stars/uncphysics/josh/Koester_ML2alpha08'
 elif os.getcwd()[0:4] == '/afs': #Check if we are on Infierno
