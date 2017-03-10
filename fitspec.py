@@ -470,7 +470,7 @@ if redfile:
     
     aest = np.zeros(8)
     ######
-    
+    '''
     xes = np.array([lambdas[afitlow],lambdas[alow],lambdas[alow+10],lambdas[ahi-10],lambdas[ahi],lambdas[afithi]])
     yes = np.array([dataval[afitlow],dataval[alow],dataval[alow+10],dataval[ahi-10],dataval[ahi],dataval[afithi]])
     ap = np.polyfit(xes,yes,3)
@@ -487,10 +487,10 @@ if redfile:
     ahighidx = adiff[np.where(alambdas > 6562.79)].argmin() + len(adiff[np.where(alambdas < 6562.79)])
     aest[5] = (alambdas[ahighidx] - alambdas[alowidx]) / (2.*np.sqrt(2.*np.log(2.))) #convert FWHM to sigma
     aest[6] = 1.0 #how much of a pseudo-gaussian
-    
+    '''
     ######
     #From fit to GD 165 on 2015-04-26
-    '''
+    
     aest[0] = 6.55710438e+04
     aest[1] =-3.01859244e+01
     aest[2] = 4.65757107e-03
@@ -499,7 +499,7 @@ if redfile:
     aest[5] =3.71607024e+01
     aest[6] = 7.29274380e-01
     aest[7] =-2.40131150e-07
-    '''
+    
     
 
 
@@ -509,7 +509,7 @@ betaval = dataval[bfitlow:bfithi+1]
 
 best = np.zeros(8)
 #######
-
+'''
 xes = np.array([lambdas[bfitlow],lambdas[blow],lambdas[blow+10],lambdas[bhi],lambdas[bfithi]])
 yes = np.array([dataval[bfitlow],dataval[blow],dataval[blow+10],dataval[bhi],dataval[bfithi]])
 bp = np.polyfit(xes,yes,3)
@@ -526,10 +526,10 @@ blowidx = bdiff[np.where(blambdas < 4862.71)].argmin()
 bhighidx = bdiff[np.where(blambdas > 4862.71)].argmin() + len(bdiff[np.where(blambdas < 4862.71)])
 best[5] = (blambdas[bhighidx] - blambdas[blowidx]) / (2.*np.sqrt(2.*np.log(2.))) #convert FWHM to sigma
 best[6] = 1.0 #how much of a pseudo-gaussian
-
+'''
 ##########
 #From fit to GD 165 on 2015-04-26
-'''
+
 best[0] = 2.94474405e+05
 best[1] = -1.81068634e+02
 best[2] = 3.72112471e-02
@@ -538,7 +538,7 @@ best[4] =4.86191879e+03
 best[5] = 3.22064185e+01
 best[6] =8.86479782e-01
 best[7] = -2.55179334e-06
-'''
+
 
 glambdas = lambdas[gfitlow:gfithi+1]
 gsigmas = sigmaval[gfitlow:gfithi+1]
@@ -894,7 +894,7 @@ hsig = sigmaval[hlow:gfithi+1]
 bigest = np.zeros(28)
 
 #Guesses from GD 165: 2015-04-26
-'''
+
 bigest[0] = -1.40049986e+05
 bigest[1] = 1.00197634e+02
 bigest[2] = -2.36678694e-02
@@ -924,8 +924,8 @@ bigest[24] =-2.17402577e+02
 bigest[25] =3.79732448e+03
 bigest[26] =3.98047434e+01
 bigest[27] =1.13178448e+00
-'''
 
+'''
 #Guess for continuum
 xes = np.array([lambdas[H10low],lambdas[H9low],lambdas[H8low],lambdas[elow],lambdas[dlow],lambdas[dhi],lambdas[glow],lambdas[ghi]])
 yes = np.array([dataval[H10low],dataval[H9low],dataval[H8low],dataval[elow],dataval[dlow],dataval[dhi],dataval[glow],dataval[ghi]])
@@ -1007,7 +1007,7 @@ H10lowidx = H10diff[np.where(H10lambdas < 3798.8)].argmin()
 H10highidx = H10diff[np.where(H10lambdas > 3798.8)].argmin() + len(H10diff[np.where(H10lambdas < 3798.8)])
 bigest[26] = (H10lambdas[H10highidx] - H10lambdas[H10lowidx]) / (2.*np.sqrt(2.*np.log(2.)))
 bigest[27] = 1.2 #how much of a pseudo-gaussian
-
+'''
 
 print 'Now fitting H-gamma through H10.'
 bigfa = {'x':hlambdas, 'y':hval, 'err':hsig}
