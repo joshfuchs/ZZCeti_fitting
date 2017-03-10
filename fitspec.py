@@ -1317,7 +1317,7 @@ home_directory = os.getcwd()
 if zzcetiblue[0] == '.':
     os.chdir(zzcetiblue[0:zzcetiblue.find('w')])
 saveoffsets = 'offsets_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_' + marker + '.pdf'
-offsetpdf = PdfPages(saveoffsets)
+#offsetpdf = PdfPages(saveoffsets)
 if redfile:
     #Start with alpha
     #Set the center of the line to the wavelength of the models.
@@ -1331,11 +1331,11 @@ if redfile:
     anormhi = np.min(np.where(alambdas > alphanormwavelengthhigh))
     #Find the offset between the pseudogaussian fit and the actual data
     arefit_width = 10
-    afit_high = fit_offset(alambdas[anormhi-arefit_width:anormhi+arefit_width],alphaval[anormhi-arefit_width:anormhi+arefit_width],alphafit[anormhi-arefit_width:anormhi+arefit_width],alphanormwavelengthhigh,asigmas[anormhi-arefit_width:anormhi+arefit_width])
-    afit_low = fit_offset(alambdas[anormlow-arefit_width:anormlow+arefit_width],alphaval[anormlow-arefit_width:anormlow+arefit_width],alphafit[anormlow-arefit_width:anormlow+arefit_width],alphanormwavelengthlow,asigmas[anormlow-arefit_width:anormlow+arefit_width])
+    #afit_high = fit_offset(alambdas[anormhi-arefit_width:anormhi+arefit_width],alphaval[anormhi-arefit_width:anormhi+arefit_width],alphafit[anormhi-arefit_width:anormhi+arefit_width],alphanormwavelengthhigh,asigmas[anormhi-arefit_width:anormhi+arefit_width])
+    #afit_low = fit_offset(alambdas[anormlow-arefit_width:anormlow+arefit_width],alphaval[anormlow-arefit_width:anormlow+arefit_width],alphafit[anormlow-arefit_width:anormlow+arefit_width],alphanormwavelengthlow,asigmas[anormlow-arefit_width:anormlow+arefit_width])
     #print afit_high, afit_low
-    #afit_high = alphafit[anormhi]
-    #afit_low = alphafit[anormlow]
+    afit_high = alphafit[anormhi]
+    afit_low = alphafit[anormlow]
     aslope = (afit_high - afit_low ) / (alambdas[anormhi] - alambdas[anormlow])
     alambdasnew = alambdas[anormlow:anormhi+1]
     alphavalnew = alphaval[anormlow:anormhi+1]
@@ -1366,11 +1366,11 @@ bnormlow = np.min(np.where(blambdas > betanormwavelengthlow))
 bnormhi = np.min(np.where(blambdas > betanormwavelengthhigh))
 #Find the offset between the pseudogaussian fit and the actual data
 brefit_width = 10
-bfit_high = fit_offset(blambdas[bnormhi-brefit_width:bnormhi+brefit_width],betaval[bnormhi-brefit_width:bnormhi+brefit_width],betafit[bnormhi-brefit_width:bnormhi+brefit_width],betanormwavelengthhigh,bsigmas[bnormhi-brefit_width:bnormhi+brefit_width])
-bfit_low = fit_offset(blambdas[bnormlow-brefit_width:bnormlow+brefit_width],betaval[bnormlow-brefit_width:bnormlow+brefit_width],betafit[bnormlow-brefit_width:bnormlow+brefit_width],betanormwavelengthlow,bsigmas[bnormlow-brefit_width:bnormlow+brefit_width])
+#bfit_high = fit_offset(blambdas[bnormhi-brefit_width:bnormhi+brefit_width],betaval[bnormhi-brefit_width:bnormhi+brefit_width],betafit[bnormhi-brefit_width:bnormhi+brefit_width],betanormwavelengthhigh,bsigmas[bnormhi-brefit_width:bnormhi+brefit_width])
+#bfit_low = fit_offset(blambdas[bnormlow-brefit_width:bnormlow+brefit_width],betaval[bnormlow-brefit_width:bnormlow+brefit_width],betafit[bnormlow-brefit_width:bnormlow+brefit_width],betanormwavelengthlow,bsigmas[bnormlow-brefit_width:bnormlow+brefit_width])
 #print bfit_high, bfit_low
-#bfit_high = betafit[bnormhi]
-#bfit_low = betafit[bnormlow]
+bfit_high = betafit[bnormhi]
+bfit_low = betafit[bnormlow]
 bslope = (bfit_high - bfit_low ) / (blambdas[bnormhi] - blambdas[bnormlow])
 blambdasnew = blambdas[bnormlow:bnormhi+1]
 betavalnew = betaval[bnormlow:bnormhi+1]
@@ -1397,11 +1397,11 @@ gnormlow = np.min(np.where(glambdas > gammanormwavelengthlow))
 gnormhi = np.min(np.where(glambdas > gammanormwavelengthhigh))
 #Find the offset between the pseudogaussian fit and the actual data
 grefit_width = 10
-gfit_high = fit_offset(glambdas[gnormhi-grefit_width:gnormhi+grefit_width],gamval[gnormhi-grefit_width:gnormhi+grefit_width],gamfit[gnormhi-grefit_width:gnormhi+grefit_width],gammanormwavelengthhigh,gsigmas[gnormhi-grefit_width:gnormhi+grefit_width])
-gfit_low = fit_offset(glambdas[gnormlow-grefit_width:gnormlow+grefit_width],gamval[gnormlow-grefit_width:gnormlow+grefit_width],gamfit[gnormlow-grefit_width:gnormlow+grefit_width],gammanormwavelengthlow,gsigmas[gnormlow-grefit_width:gnormlow+grefit_width])
+#gfit_high = fit_offset(glambdas[gnormhi-grefit_width:gnormhi+grefit_width],gamval[gnormhi-grefit_width:gnormhi+grefit_width],gamfit[gnormhi-grefit_width:gnormhi+grefit_width],gammanormwavelengthhigh,gsigmas[gnormhi-grefit_width:gnormhi+grefit_width])
+#gfit_low = fit_offset(glambdas[gnormlow-grefit_width:gnormlow+grefit_width],gamval[gnormlow-grefit_width:gnormlow+grefit_width],gamfit[gnormlow-grefit_width:gnormlow+grefit_width],gammanormwavelengthlow,gsigmas[gnormlow-grefit_width:gnormlow+grefit_width])
 #print gfit_high, gfit_low
-#gfit_high = gamfit[bnormhi]
-#gfit_low = gamfit[bnormlow]
+gfit_high = gamfit[bnormhi]
+gfit_low = gamfit[bnormlow]
 gslope = (gfit_high - gfit_low ) / (glambdas[gnormhi] - glambdas[gnormlow])
 glambdasnew = glambdas[gnormlow:gnormhi+1]
 gamvalnew = gamval[gnormlow:gnormhi+1]
@@ -1429,11 +1429,11 @@ dvaltemp = dataval[hlow:gfithi+1]
 dsigtemp = sigmaval[hlow:gfithi+1]
 #Find the offset between the pseudogaussian fit and the actual data
 drefit_width = 10
-dfit_high = fit_offset(hlambdastemp[dnormhi-drefit_width:dnormhi+drefit_width],dvaltemp[dnormhi-drefit_width:dnormhi+drefit_width],hfit[dnormhi-drefit_width:dnormhi+drefit_width],deltawavelengthhigh,dsigtemp[dnormhi-drefit_width:dnormhi+drefit_width])
-dfit_low = fit_offset(hlambdastemp[dnormlow-drefit_width:dnormlow+drefit_width],dvaltemp[dnormlow-drefit_width:dnormlow+drefit_width],hfit[dnormlow-drefit_width:dnormlow+drefit_width],deltawavelengthlow,dsigtemp[dnormlow-drefit_width:dnormlow+drefit_width])
+#dfit_high = fit_offset(hlambdastemp[dnormhi-drefit_width:dnormhi+drefit_width],dvaltemp[dnormhi-drefit_width:dnormhi+drefit_width],hfit[dnormhi-drefit_width:dnormhi+drefit_width],deltawavelengthhigh,dsigtemp[dnormhi-drefit_width:dnormhi+drefit_width])
+#dfit_low = fit_offset(hlambdastemp[dnormlow-drefit_width:dnormlow+drefit_width],dvaltemp[dnormlow-drefit_width:dnormlow+drefit_width],hfit[dnormlow-drefit_width:dnormlow+drefit_width],deltawavelengthlow,dsigtemp[dnormlow-drefit_width:dnormlow+drefit_width])
 #print dfit_high, dfit_low
-#dfit_high = hfit[dnormhi]
-#dfit_low = hfit[dnormlow]
+dfit_high = hfit[dnormhi]
+dfit_low = hfit[dnormlow]
 dslope = (dfit_high - dfit_low) / (hlambdastemp[dnormhi] - hlambdastemp[dnormlow])
 dli = dslope * (dlambdas - dlambdas[0]) + dfit_low
 dnline = dvaltemp[dnormlow:dnormhi+1] / dli
@@ -1455,11 +1455,11 @@ evaltemp = dataval[hlow:hhi+1]
 esigtemp = sigmaval[hlow:hhi+1]
 #Find the offset between the pseudogaussian fit and the actual data
 erefit_width = 10 #pixels
-efit_high = fit_offset(hlambdastemp[enormhi-erefit_width:enormhi+erefit_width],evaltemp[enormhi-erefit_width:enormhi+erefit_width],hfit[enormhi-erefit_width:enormhi+erefit_width],epsilonwavelengthhigh,esigtemp[enormhi-erefit_width:enormhi+erefit_width])
-efit_low = fit_offset(hlambdastemp[enormlow-erefit_width:enormlow+erefit_width],evaltemp[enormlow-erefit_width:enormlow+erefit_width],hfit[enormlow-erefit_width:enormlow+erefit_width],epsilonwavelengthlow,esigtemp[enormlow-erefit_width:enormlow+erefit_width])
+#efit_high = fit_offset(hlambdastemp[enormhi-erefit_width:enormhi+erefit_width],evaltemp[enormhi-erefit_width:enormhi+erefit_width],hfit[enormhi-erefit_width:enormhi+erefit_width],epsilonwavelengthhigh,esigtemp[enormhi-erefit_width:enormhi+erefit_width])
+#efit_low = fit_offset(hlambdastemp[enormlow-erefit_width:enormlow+erefit_width],evaltemp[enormlow-erefit_width:enormlow+erefit_width],hfit[enormlow-erefit_width:enormlow+erefit_width],epsilonwavelengthlow,esigtemp[enormlow-erefit_width:enormlow+erefit_width])
 #print efit_high, efit_low
-#efit_high = hfit[enormhi]
-#efit_low = hfit[enormlow]
+efit_high = hfit[enormhi]
+efit_low = hfit[enormlow]
 eslope = (efit_high - efit_low ) / (hlambdastemp[enormhi] - hlambdastemp[enormlow])
 eli = eslope * (elambdas - elambdas[0]) + efit_low
 enline = evaltemp[enormlow:enormhi+1] / eli
@@ -1478,11 +1478,11 @@ H8valtemp = dataval[hlow:hhi+1]
 H8sigtemp = sigmaval[hlow:hhi+1]
 #Find the offset between the pseudogaussian fit and the actual data
 H8refit_width = 10 #pixels
-H8fit_high = fit_offset(hlambdastemp[H8normhi-H8refit_width:H8normhi+H8refit_width],H8valtemp[H8normhi-H8refit_width:H8normhi+H8refit_width],hfit[H8normhi-H8refit_width:H8normhi+H8refit_width],heightwavelengthhigh,H8sigtemp[H8normhi-H8refit_width:H8normhi+H8refit_width])
-H8fit_low = fit_offset(hlambdastemp[H8normlow-H8refit_width:H8normlow+H8refit_width],H8valtemp[H8normlow-H8refit_width:H8normlow+H8refit_width],hfit[H8normlow-H8refit_width:H8normlow+H8refit_width],heightwavelengthlow,H8sigtemp[H8normlow-H8refit_width:H8normlow+H8refit_width])
+#H8fit_high = fit_offset(hlambdastemp[H8normhi-H8refit_width:H8normhi+H8refit_width],H8valtemp[H8normhi-H8refit_width:H8normhi+H8refit_width],hfit[H8normhi-H8refit_width:H8normhi+H8refit_width],heightwavelengthhigh,H8sigtemp[H8normhi-H8refit_width:H8normhi+H8refit_width])
+#H8fit_low = fit_offset(hlambdastemp[H8normlow-H8refit_width:H8normlow+H8refit_width],H8valtemp[H8normlow-H8refit_width:H8normlow+H8refit_width],hfit[H8normlow-H8refit_width:H8normlow+H8refit_width],heightwavelengthlow,H8sigtemp[H8normlow-H8refit_width:H8normlow+H8refit_width])
 #print H8fit_high, H8fit_low
-#H8fit_high = hfit[H8normhi]
-#H8fit_low = hfit[H8normlow]
+H8fit_high = hfit[H8normhi]
+H8fit_low = hfit[H8normlow]
 H8slope = (H8fit_high - H8fit_low ) / (hlambdastemp[H8normhi] - hlambdastemp[H8normlow])
 H8li = H8slope * (H8lambdas - H8lambdas[0]) + H8fit_low
 H8nline = H8valtemp[H8normlow:H8normhi+1] / H8li
@@ -1502,11 +1502,11 @@ H9valtemp = dataval[hlow:hhi+1]
 H9sigtemp = sigmaval[hlow:hhi+1]
 #Find the offset between the pseudogaussian fit and the actual data
 H9refit_width = 10 #pixels
-H9fit_high = fit_offset(hlambdastemp[H9normhi-H9refit_width:H9normhi+H9refit_width],H9valtemp[H9normhi-H9refit_width:H9normhi+H9refit_width],hfit[H9normhi-H9refit_width:H9normhi+H9refit_width],hninewavelengthhigh,H9sigtemp[H9normhi-H9refit_width:H9normhi+H9refit_width])
-H9fit_low = fit_offset(hlambdastemp[H9normlow-H9refit_width:H9normlow+H9refit_width],H9valtemp[H9normlow-H9refit_width:H9normlow+H9refit_width],hfit[H9normlow-H9refit_width:H9normlow+H9refit_width],hninewavelengthlow,H9sigtemp[H9normlow-H9refit_width:H9normlow+H9refit_width])
+#H9fit_high = fit_offset(hlambdastemp[H9normhi-H9refit_width:H9normhi+H9refit_width],H9valtemp[H9normhi-H9refit_width:H9normhi+H9refit_width],hfit[H9normhi-H9refit_width:H9normhi+H9refit_width],hninewavelengthhigh,H9sigtemp[H9normhi-H9refit_width:H9normhi+H9refit_width])
+#H9fit_low = fit_offset(hlambdastemp[H9normlow-H9refit_width:H9normlow+H9refit_width],H9valtemp[H9normlow-H9refit_width:H9normlow+H9refit_width],hfit[H9normlow-H9refit_width:H9normlow+H9refit_width],hninewavelengthlow,H9sigtemp[H9normlow-H9refit_width:H9normlow+H9refit_width])
 #print H9fit_high, H9fit_low
-#H9fit_high = hfit[H9normhi]
-#H9fit_low = hfit[H9normlow]
+H9fit_high = hfit[H9normhi]
+H9fit_low = hfit[H9normlow]
 H9slope = (H9fit_high - H9fit_low ) / (hlambdastemp[H9normhi] - hlambdastemp[H9normlow])
 H9li = H9slope * (H9lambdas - H9lambdas[0]) + H9fit_low
 H9nline = H9valtemp[H9normlow:H9normhi+1] / H9li
@@ -1529,7 +1529,7 @@ H10valtemp = dataval[hlow:hhi+1]
 H10sigtemp = sigmaval[hlow:hhi+1]
 #Find the offset between the pseudogaussian fit and the actual data
 H10refit_width = 10 #pixels
-H10fit_high = fit_offset(hlambdastemp[H10normhi-H10refit_width:H10normhi+H10refit_width],H10valtemp[H10normhi-H10refit_width:H10normhi+H10refit_width],hfit[H10normhi-H10refit_width:H10normhi+H10refit_width],htenwavelengthhigh,H10sigtemp[H10normhi-H10refit_width:H10normhi+H10refit_width])
+#H10fit_high = fit_offset(hlambdastemp[H10normhi-H10refit_width:H10normhi+H10refit_width],H10valtemp[H10normhi-H10refit_width:H10normhi+H10refit_width],hfit[H10normhi-H10refit_width:H10normhi+H10refit_width],htenwavelengthhigh,H10sigtemp[H10normhi-H10refit_width:H10normhi+H10refit_width])
 
 
 #Since H10 is close to the bottom of our array, we must be careful with setting the index limits
@@ -1541,15 +1541,15 @@ else:
     H10index_low = H10normlow-H10refit_width
     H10index_high = H10normlow+H10refit_width
     #print 'Now using: ', H10index_low, H10index_high
-H10fit_low = fit_offset(hlambdastemp[H10index_low:H10index_high],H10valtemp[H10index_low:H10index_high],hfit[H10index_low:H10index_high],htenwavelengthlow,H10sigtemp[H10index_low:H10index_high])
+#H10fit_low = fit_offset(hlambdastemp[H10index_low:H10index_high],H10valtemp[H10index_low:H10index_high],hfit[H10index_low:H10index_high],htenwavelengthlow,H10sigtemp[H10index_low:H10index_high])
 #print H10fit_high, H10fit_low
-#H10fit_high = hfit[H10normhi]
-#H10fit_low = hfit[H10normlow]
+H10fit_high = hfit[H10normhi]
+H10fit_low = hfit[H10normlow]
 H10slope = (H10fit_high - H10fit_low ) / (hlambdastemp[H10normhi] - hlambdastemp[H10normlow])
 H10li = H10slope * (H10lambdas - H10lambdas[0]) + H10fit_low
 H10nline = H10valtemp[H10normlow:H10normhi+1] / H10li
 H10sigma = H10sigtemp[H10normlow:H10normhi+1] / H10li
-offsetpdf.close()
+#offsetpdf.close()
 if zzcetiblue[0] == '.':
     os.chdir(home_directory)
 #plt.plot(hlambdastemp[H10normlow],hfit[H10normlow],'g^')
@@ -1908,7 +1908,8 @@ plt.plot(hlambdas,hval-hfit + (hfit.min()+ymin)/2.5,'k')
 plt.title(zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + ', R. chi^2: ' + str(np.round(hparams.fnorm/hparams.dof,decimals=4)))
 fitpdf.savefig()
 try:
-    stitchpoint = datalistblue[0].header['STITCHLO']
+    stitchlocation = datalistblue[0].header['STITCHLO']
+    stitchpoint = stitchlocation-hlow #hlambdas starts at pixel hlow, but STITCHLO is from pixel 0. So we need that difference to use the correct location.
     plt.clf()
     plt.plot(hlambdas[stitchpoint-25:stitchpoint+26],hval[stitchpoint-25:stitchpoint+26],'b')
     plt.plot(hlambdas[stitchpoint-25:stitchpoint+26],hfit[stitchpoint-25:stitchpoint+26],'r')
