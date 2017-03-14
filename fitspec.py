@@ -1400,8 +1400,8 @@ grefit_width = 10
 #gfit_high = fit_offset(glambdas[gnormhi-grefit_width:gnormhi+grefit_width],gamval[gnormhi-grefit_width:gnormhi+grefit_width],gamfit[gnormhi-grefit_width:gnormhi+grefit_width],gammanormwavelengthhigh,gsigmas[gnormhi-grefit_width:gnormhi+grefit_width])
 #gfit_low = fit_offset(glambdas[gnormlow-grefit_width:gnormlow+grefit_width],gamval[gnormlow-grefit_width:gnormlow+grefit_width],gamfit[gnormlow-grefit_width:gnormlow+grefit_width],gammanormwavelengthlow,gsigmas[gnormlow-grefit_width:gnormlow+grefit_width])
 #print gfit_high, gfit_low
-gfit_high = gamfit[bnormhi]
-gfit_low = gamfit[bnormlow]
+gfit_high = gamfit[gnormhi]
+gfit_low = gamfit[gnormlow]
 gslope = (gfit_high - gfit_low ) / (glambdas[gnormhi] - glambdas[gnormlow])
 glambdasnew = glambdas[gnormlow:gnormhi+1]
 gamvalnew = gamval[gnormlow:gnormhi+1]
@@ -1842,7 +1842,7 @@ else:
 #variation = alphavariation + betavariation + gammavariation + highervariation
 #print variation
 #plt.clf()
-#plt.plot(alllambda,allnline)
+#plt.plot(alllambda,allnline,'b^')
 #plt.show()
 #sys.exit()
 
