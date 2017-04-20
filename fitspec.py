@@ -1949,13 +1949,18 @@ def fit_now(zzcetiblue,zzcetired,redfile,fitguess='data',higherlines='g10'):
     filenames = 'interpolated_names.txt'
     #filenames = 'short_list.txt'
     if os.getcwd()[0:4] == '/pro': #Check if we are on Hatteras
-        path = '/projects/stars/uncphysics/josh/Koester_ML2alpha08'
+        #path = '/projects/stars/uncphysics/josh/Koester_ML2alpha08'
+        #modelwavelengths = 'vacuum'
+        path = '/projects/stars/uncphysics/josh/bergeron_new'
+        modelwavelengths = 'air'
     elif os.getcwd()[0:4] == '/afs': #Check if we are on Infierno
         #path = '/srv/two/jtfuchs/Interpolated_Models/Koester_ML2alpha06/bottom11500_750'
         #path = '/srv/two/jtfuchs/Interpolated_Models/Koester_ML2alpha08/bottom10000_700'
+        #modelwavelengths = 'vacuum'
         path = '/srv/two/jtfuchs/Interpolated_Models/Bergeron_new/bottom10000_700'
+        modelwavelengths = 'air'
 
-    ncflux,bestT,bestg = intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path,marker,redfile,RA,DEC,SNR,airmass,nexp,exptime)
+    ncflux,bestT,bestg = intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path,marker,redfile,RA,DEC,SNR,airmass,nexp,exptime,modelwavelengths)
 
 
 

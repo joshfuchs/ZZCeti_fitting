@@ -97,10 +97,19 @@ def multifitpseudogauss(p,fjac=None,x=None, y=None, err=None):
     return([status,(y-model)/err])
 #==================================
 
+def air2vac(wavelengths):
+    #This conversion is less trivial because index of refraction depends on lambda_vacuum. But can be approximated as below. Plot from http://www.astro.uu.se/valdwiki/Air-to-vacuum%20conversion indicates the error here is about 10^-9 angstroms
+    #From Morton (1991, ApJS, 77, 199)
+    n = 1 + 0.00008336624212083 + 0.02408926869968 / (130.1065924522 - (10**4./wavelengths)**2.) + 0.0001599740894897 / (38.92568793293 - (10**4./wavelengths)**2.)
+    vacwavelengths = wavelengths * n
+    return vacwavelengths
+
+#==================================
+
 #Case = 0 means using D. Koester's raw models
 #Case = 1 means using the interpolation of those models to a smaller grid.
 
-def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path,marker,redfile,RA,DEC,SNR,airmass,nexp,exptime):
+def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path,marker,redfile,RA,DEC,SNR,airmass,nexp,exptime,modelwavelengths):
 
     '''
     :DESCRIPTION: Interpolates and convolves DA models to match observed spectra. Fits pseudogaussians to DA models and compares to normalized, observed spectra. Save chi-square values.
@@ -131,6 +140,8 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
        path: string, file path path to models
 
        redfile: True if Halpha included. False if not included.
+
+       modelwavelengths: (air/vacuum) If model wavelengths are in air, we will convert to vacuum.
 
     '''
 
@@ -193,6 +204,16 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
             intlambda, intflux = np.genfromtxt(filename,unpack=True) #We already interpolated the lambda and flux
         print 'Teff and log_g of model are ', teff, 'and ', logg
 
+        if modelwavelengths == 'air':
+            print 'Converting wavelengths from air to vacuum.'
+            if case == 0:
+                lambdas = air2vac(lambdas)
+            elif case == 1:
+                intlambda = air2vac(intlambda)
+                #Convert from F_nu to F_lambda
+                for x in range(0,len(intlambda)):
+                    intflux[x] = 4.*(1E8)*(2.997E18)*intflux[x]/(intlambda[x])**2.
+        
         #plt.clf()
         #plt.plot(lambdas,inten,'ro',label='Model')
         #plt.show()
@@ -910,7 +931,7 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         #Save interpolated and normalized model
         #os.chdir(home_directory)
         #os.chdir(data_directory)
-        #intmodelname = 'da' + str(teff) + '_' + str(logg) + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find('.ms.')] + '_' + str(np.round(FWHM[0],decimals=2)) + '_norm.txt'
+        #intmodelname = 'da' + str(teff) + '_' + str(logg) + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find('.ms.')] + '_' + str(np.round(FWHM[0],decimals=2)) + '_Bnew_Flambda_norm.txt'
         #np.savetxt(intmodelname,np.transpose([alllambda,ncflux]))
         #os.chdir(path)
 
@@ -999,7 +1020,7 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
     #Now save the best convolved model and delta chi squared surface
     file_header = str(lowestg) + ',' + str(deltag) + ',' + str(highestg) + ',' + str(lowestt) + ',' + str(deltat) + ',' + str(highestt)
     endpoint = '.ms.' #For shorter names, use '_930'
-    newmodel = 'model_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_' + marker + '.txt' #NEED TO CHECK THIS TO MAKE SURE IT WORKS GENERALLY
+    newmodel = 'model_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_' + marker + '.txt' 
     np.savetxt(newmodel,np.transpose([alllambda,bestmodel]))
     chiname = 'chi_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_' + marker + '.txt'
     np.savetxt(chiname,chis,header=file_header)
