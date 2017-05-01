@@ -52,10 +52,10 @@ else:
     from matplotlib.backends.backend_pdf import PdfPages
 import mpfit
 from intspec import intspecs
-import pyfits as fits # Infierno doesn't support astropy for some reason so using pyfits
+import astropy.io.fits as fits
+#import pyfits as fits # Infierno doesn't support astropy for some reason so using pyfits
 from glob import glob
 import argparse
-#import astropy.io.fits as pf
 
 
 # ===========================================================================
