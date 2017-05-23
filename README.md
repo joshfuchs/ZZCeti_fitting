@@ -14,7 +14,5 @@ finegrid.py: Takes the best log(g) and Teff result from intspec.py and sets up t
 intmodels.py: Interpolates the coarse model grid to a smaller model grid. 
 
 Dependencies:
-- numpy
-- scipy
-- pyfits 
+- See requirements.txt for list of Python packages needed. But you will also need the following program:
 - mpfit (can be found at http://code.google.com/p/astrolibpy/source/browse/trunk/)
