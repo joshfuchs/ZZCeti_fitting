@@ -1,0 +1,11 @@
+argparse==1.4.0
+astropy==0.3
+cycler==0.10.0
+matplotlib==1.5.3
+numpy==1.11.2
+pyfits==3.4
+pyparsing==2.1.10
+python-dateutil==2.5.3
+pytz==2016.7
+scipy==0.14.1
+six==1.10.0
