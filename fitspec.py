@@ -253,7 +253,10 @@ def fit_now(zzcetiblue,zzcetired,redfile,fitguess='data',higherlines='g10',res=N
         
         trim_sec_blue= datalistblue[0].header["CCDSEC"]
         trim_offset_blue= float( trim_sec_blue[1:len(trim_sec_blue)-1].split(':')[0] )-1
-        biningblue= float( datalistblue[0].header["PARAM18"] ) 
+        try:
+            biningblue= float( datalistblue[0].header["PARAM18"] ) 
+        except:
+            biningblue= float( datalistblue[0].header["PG3_2"] ) 
         nxblue= np.size(datavalblue)#spec_data[0]
         PixelsBlue= biningblue*(np.arange(0,nxblue,1)+trim_offset_blue)
         lambdasblue = DispCalc(PixelsBlue, alphablue, thetablue, frblue, fdblue, flblue, zPntblue)
@@ -310,7 +313,10 @@ def fit_now(zzcetiblue,zzcetired,redfile,fitguess='data',higherlines='g10',res=N
             
             trim_sec_red= datalistred[0].header["CCDSEC"]
             trim_offset_red= float( trim_sec_red[1:len(trim_sec_red)-1].split(':')[0] )-1
-            biningred= float( datalistred[0].header["PARAM18"] ) 
+            try:
+                biningred= float( datalistred[0].header["PARAM18"] ) 
+            except:
+                biningred= float( datalistred[0].header["PG3_2"] ) 
             nxred= np.size(datavalred)#spec_data[0]
             PixelsRed= biningred*(np.arange(0,nxred,1)+trim_offset_red)
             lambdasred = DispCalc(PixelsRed, alphared, thetared, frred, fdred, flred, zPntred)
