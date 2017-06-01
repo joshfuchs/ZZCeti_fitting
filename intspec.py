@@ -109,7 +109,7 @@ def air2vac(wavelengths):
 #Case = 0 means using D. Koester's raw models
 #Case = 1 means using the interpolation of those models to a smaller grid.
 
-def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path,marker,redfile,RA,DEC,SNR,airmass,nexp,exptime,modelwavelengths):
+def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path,marker,redfile,RA,DEC,SNR,airmass,nexp,exptime,modelwavelengths,idname):
 
     '''
     :DESCRIPTION: Interpolates and convolves DA models to match observed spectra. Fits pseudogaussians to DA models and compares to normalized, observed spectra. Save chi-square values.
@@ -142,6 +142,8 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
        redfile: True if Halpha included. False if not included.
 
        modelwavelengths: (air/vacuum) If model wavelengths are in air, we will convert to vacuum.
+    
+       idname: string, name for saving of files for identification assistance
 
     '''
 
@@ -931,7 +933,7 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         #Save interpolated and normalized model
         #os.chdir(home_directory)
         #os.chdir(data_directory)
-        #intmodelname = 'da' + str(teff) + '_' + str(logg) + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find('.ms.')] + '_' + str(np.round(FWHM[0],decimals=2)) + '_Bnew_Flambda_norm.txt'
+        #intmodelname = 'da' + str(teff) + '_' + str(logg) + idname + '_' + str(np.round(FWHM[0],decimals=2)) + '_Bnew_Flambda_norm.txt'
         #np.savetxt(intmodelname,np.transpose([alllambda,ncflux]))
         #os.chdir(path)
 
@@ -1020,28 +1022,28 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
     #Now save the best convolved model and delta chi squared surface
     file_header = str(lowestg) + ',' + str(deltag) + ',' + str(highestg) + ',' + str(lowestt) + ',' + str(deltat) + ',' + str(highestt)
     endpoint = '.ms.' #For shorter names, use '_930'
-    newmodel = 'model_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_' + marker + '.txt' 
+    newmodel = 'model_' + idname + '_' + now[5:10] + '_' + marker + '.txt' 
     np.savetxt(newmodel,np.transpose([alllambda,bestmodel]))
-    chiname = 'chi_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_' + marker + '.txt'
+    chiname = 'chi_' + idname + '_' + now[5:10] + '_' + marker + '.txt'
     np.savetxt(chiname,chis,header=file_header)
     if redfile:
-        alphaname = 'chi_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_alpha_' + now[5:10] + '_' + marker + '.txt'
+        alphaname = 'chi_' + idname + '_alpha_' + now[5:10] + '_' + marker + '.txt'
         np.savetxt(alphaname,chisalpha,header=file_header)
-    betaname = 'chi_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_beta_' + now[5:10] + '_' + marker + '.txt'
+    betaname = 'chi_' + idname + '_beta_' + now[5:10] + '_' + marker + '.txt'
     np.savetxt(betaname,chisbeta,header=file_header)
-    gammaname = 'chi_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_gamma_' + now[5:10] + '_' + marker + '.txt'
+    gammaname = 'chi_' + idname + '_gamma_' + now[5:10] + '_' + marker + '.txt'
     np.savetxt(gammaname,chisgamma,header=file_header)
-    deltaname = 'chi_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_delta_' + now[5:10] + '_' + marker + '.txt'
+    deltaname = 'chi_' + idname + '_delta_' + now[5:10] + '_' + marker + '.txt'
     np.savetxt(deltaname,chisdelta,header=file_header)
-    epsilonname = 'chi_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_epsilon_' + now[5:10] + '_' + marker + '.txt'
+    epsilonname = 'chi_' + idname + '_epsilon_' + now[5:10] + '_' + marker + '.txt'
     np.savetxt(epsilonname,chisepsilon,header=file_header)
-    H8name = 'chi_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_H8_' + now[5:10] + '_' + marker + '.txt'
+    H8name = 'chi_' + idname + '_H8_' + now[5:10] + '_' + marker + '.txt'
     np.savetxt(H8name,chis8,header=file_header)
-    H9name = 'chi_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_H9_' + now[5:10] + '_' + marker + '.txt'
+    H9name = 'chi_' + idname + '_H9_' + now[5:10] + '_' + marker + '.txt'
     np.savetxt(H9name,chis9,header=file_header)
-    H10name = 'chi_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_H10_' + now[5:10] + '_' + marker + '.txt'
+    H10name = 'chi_' + idname + '_H10_' + now[5:10] + '_' + marker + '.txt'
     np.savetxt(H10name,chis10,header=file_header)
-    #variationname = 'variation_models_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find('_930_')] + now[5:10] + '_' + marker + '.txt'
+    #variationname = 'variation_models_' + idname + now[5:10] + '_' + marker + '.txt'
     #np.savetxt(variationname,variation)
     os.chdir(path)
 

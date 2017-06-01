@@ -198,135 +198,152 @@ def fit_offset(wavelengths,data,fit,wavelength_norm,sigma_data):
 # ===========================================================================
 
 
-def fit_now(zzcetiblue,zzcetired,redfile,fitguess='data',higherlines='g10'):
-    #Read in the blue spectrum
-    datalistblue = fits.open(zzcetiblue)
-    datavalblue = datalistblue[0].data[0,0,:] #Reads in the object spectrum,data[0,0,:] is optimally subtracted, data[1,0,:] is raw extraction,  data[2,0,:] is sky, data[3,0,:] is sigma spectrum
-    sigmavalblue = datalistblue[0].data[3,0,:] #Sigma spectrum
+def fit_now(zzcetiblue,zzcetired,redfile,fitguess='data',higherlines='g10',res=None):
+    if zzcetiblue.lower()[-4:] == 'fits':
+        print 'Reading in fits file'
+        #Read in the blue spectrum
+        datalistblue = fits.open(zzcetiblue)
+        datavalblue = datalistblue[0].data[0,0,:] #Reads in the object spectrum,data[0,0,:] is optimally subtracted, data[1,0,:] is raw extraction,  data[2,0,:] is sky, data[3,0,:] is sigma spectrum
+        sigmavalblue = datalistblue[0].data[3,0,:] #Sigma spectrum
 
-    #Header values to save
-    RA = datalistblue[0].header['RA']
-    DEC = datalistblue[0].header['DEC']
-    SNR = 1.#float(datalistblue[0].header['SNR'])
-    airmass = float(datalistblue[0].header['AIRMASS'])
-    nexp = float(datalistblue[0].header['NCOMBINE'])
-    exptime = float(datalistblue[0].header['EXPTIME'])
+        #Header values to save
+        RA = datalistblue[0].header['RA']
+        DEC = datalistblue[0].header['DEC']
+        SNR = float(datalistblue[0].header['SNR'])
+        airmass = float(datalistblue[0].header['AIRMASS'])
+        nexp = float(datalistblue[0].header['NCOMBINE'])
+        exptime = float(datalistblue[0].header['EXPTIME'])
 
+        #ID from zzcetiblue for saving and identification of files
+        endpoint = '.ms.'
+        idname = zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] 
 
-    #Read in FWHM of blue spectrum from npy binary file. Use changing values. If no file exists, use linearized wavelengths
-    try:
-        FWHMbluefilename_struc = zzcetiblue[0:zzcetiblue.find('w')] + '*' + zzcetiblue[zzcetiblue.find('b'):zzcetiblue.find('_flux')] + '_poly.npy'
-        FWHMbluefilename = glob(FWHMbluefilename_struc)
-        FWHMpixblue = np.load(FWHMbluefilename[0])
-        print 'Found file: ', FWHMbluefilename[0]
-        print 'Using ', FWHMbluefilename[0], ' for convolution'
-    except:
-        #Read in FWHM of blue spectrum from header. Use one value only. If you change which one you use, don't forget to change it below too.
-        FWHMpixblue_val = datalistblue[0].header['specfwhm'] 
-        FWHMpixblue = FWHMpixblue_val * np.ones(len(datavalblue))
-        print  'Using ', FWHMpixblue_val, ' for convolution'
-
-
-
-    '''
-    #Linearized Wavelengths
-    wav0blue = datalistblue[0].header['crval1']
-    deltawavblue = datalistblue[0].header['cd1_1']
-    lambdasblue = np.ones(len(datavalblue))
-    lambdasblue[0] = wav0blue
-    ivalblue = np.arange(1,len(datavalblue))
-
-    for i in ivalblue:
-        lambdasblue[i] = lambdasblue[i-1] + deltawavblue
-    '''
-    #Grating equation blue wavelengths
-    alphablue = float(datalistblue[0].header['GRT_TARG'])
-    thetablue = float(datalistblue[0].header['CAM_TARG'])
-    frblue = float(datalistblue[0].header['LINDEN'])
-    fdblue = float(datalistblue[0].header['CAMFUD'])
-    flblue = float(datalistblue[0].header['FOCLEN'])
-    zPntblue = float(datalistblue[0].header['ZPOINT'])
-
-    trim_sec_blue= datalistblue[0].header["CCDSEC"]
-    trim_offset_blue= float( trim_sec_blue[1:len(trim_sec_blue)-1].split(':')[0] )-1
-    biningblue= float( datalistblue[0].header["PARAM18"] ) 
-    nxblue= np.size(datavalblue)#spec_data[0]
-    PixelsBlue= biningblue*(np.arange(0,nxblue,1)+trim_offset_blue)
-    lambdasblue = DispCalc(PixelsBlue, alphablue, thetablue, frblue, fdblue, flblue, zPntblue)
-
-    #Mask out the Littrow Ghost if 'LTTROW' is in the image header
-    try:
-        print 'Masking littrow ghost.'
-        littrow_ghost = datalistblue[0].header['LITTROW']
-        littrow_mask_low = int(float(littrow_ghost[1:len(littrow_ghost)-1].split(',')[0]))# - float(trim_offset_blue))
-        littrow_mask_high = int(float(littrow_ghost[1:len(littrow_ghost)-1].split(',')[1]))# - float(trim_offset_blue))
-        lambdasblue = np.concatenate((lambdasblue[:littrow_mask_low+1],lambdasblue[littrow_mask_high:]))
-        datavalblue = np.concatenate((datavalblue[:littrow_mask_low+1],datavalblue[littrow_mask_high:]))
-        sigmavalblue = np.concatenate((sigmavalblue[:littrow_mask_low+1],sigmavalblue[littrow_mask_high:]))
-        FWHMpixblue = np.concatenate((FWHMpixblue[:littrow_mask_low+1],FWHMpixblue[littrow_mask_high:]))
-    except:
-        print 'No mask for Littrow ghost'
-        pass
-
-    #Read in the red spectrum
-    if redfile:
-        datalistred = fits.open(zzcetired)
-        datavalred = datalistred[0].data[0,0,:] #data[0,0,:] is optimally extracted, data[2,0,:] is sky
-        sigmavalred = datalistred[0].data[3,0,:] #Sigma spectrum
-        #Read in FWHM of red spectrum from npy binary file. Use changing values. If no file exists, use linearized wavelengths
+        #Read in FWHM of blue spectrum from npy binary file. Use changing values. If no file exists, use linearized wavelengths
         try:
-            FWHMredfilename_struc = zzcetired[0:zzcetired.find('w')] + '*' + zzcetired[zzcetired.find('b'):zzcetired.find('_flux')] + '_poly.npy'
-            FWHMredfilename = glob(FWHMredfilename_struc)
-            FWHMpixred = np.load(FWHMredfilename[0])
-            print 'Found file: ', FWHMredfilename[0]
-            print 'Using ', FWHMredfilename[0], ' for convolution'
+            FWHMbluefilename_struc = zzcetiblue[0:zzcetiblue.find('w')] + '*' + zzcetiblue[zzcetiblue.find('b'):zzcetiblue.find('_flux')] + '_poly.npy'
+            FWHMbluefilename = glob(FWHMbluefilename_struc)
+            FWHMpixblue = np.load(FWHMbluefilename[0])
+            print 'Found file: ', FWHMbluefilename[0]
+            print 'Using ', FWHMbluefilename[0], ' for convolution'
         except:
-            #Read in FWHM of red spectrum from header. Use one value only. If you change which one you use, don't forget to change it below too.
-            FWHMpixred_val = datalistred[0].header['specfwhm'] 
-            FWHMpixred = FWHMpixred_val * np.ones(len(datavalred))
-            print  'Using ', FWHMpixred_val, ' for convolution'
-        '''
-        #Linearized red wavelengths
-        wav0red = datalistred[0].header['crval1']
-        deltawavred = datalistred[0].header['cd1_1']
-        lambdasred = np.ones(len(datavalred))
-        lambdasred[0] = wav0red
-        ivalred = np.arange(1,len(datavalred))
-    
-        for i in ivalred:
-            lambdasred[i] = lambdasred[i-1] + deltawavred
-    
-        '''
-        #Grating equation red wavelengths
-        alphared = float(datalistred[0].header['GRT_TARG'])
-        thetared = float(datalistred[0].header['CAM_TARG'])
-        frred = float(datalistred[0].header['LINDEN'])
-        fdred = float(datalistred[0].header['CAMFUD'])
-        flred = float(datalistred[0].header['FOCLEN'])
-        zPntred = float(datalistred[0].header['ZPOINT'])
-    
-        trim_sec_red= datalistred[0].header["CCDSEC"]
-        trim_offset_red= float( trim_sec_red[1:len(trim_sec_red)-1].split(':')[0] )-1
-        biningred= float( datalistred[0].header["PARAM18"] ) 
-        nxred= np.size(datavalred)#spec_data[0]
-        PixelsRed= biningred*(np.arange(0,nxred,1)+trim_offset_red)
-        lambdasred = DispCalc(PixelsRed, alphared, thetared, frred, fdred, flred, zPntred)
+            #Read in FWHM of blue spectrum from header. Use one value only. If you change which one you use, don't forget to change it below too.
+            FWHMpixblue_val = datalistblue[0].header['specfwhm'] 
+            FWHMpixblue = FWHMpixblue_val * np.ones(len(datavalblue))
+            print  'Using ', FWHMpixblue_val, ' for convolution'
 
 
-    #Concatenate both into two arrays
-    if redfile:
-        lambdas = np.concatenate((lambdasblue,lambdasred))
-        dataval = np.concatenate((datavalblue,datavalred))
-        sigmaval = np.concatenate((sigmavalblue,sigmavalred))#2.e-17 * np.ones(len(dataval)) small/big44./87.*
-        FWHM = (lambdasblue[-1] - lambdasblue[0])/nxblue * np.concatenate((FWHMpixblue,FWHMpixred)) #from grating equation
-        #FWHM = deltawavblue * np.concatenate((FWHMpixblue,FWHMpixred)) #FWHM in Angstroms linearized
+        '''
+        #Linearized Wavelengths
+        wav0blue = datalistblue[0].header['crval1']
+        deltawavblue = datalistblue[0].header['cd1_1']
+        lambdasblue = np.ones(len(datavalblue))
+        lambdasblue[0] = wav0blue
+        ivalblue = np.arange(1,len(datavalblue))
+        
+        for i in ivalblue:
+            lambdasblue[i] = lambdasblue[i-1] + deltawavblue
+        '''
+        #Grating equation blue wavelengths
+        alphablue = float(datalistblue[0].header['GRT_TARG'])
+        thetablue = float(datalistblue[0].header['CAM_TARG'])
+        frblue = float(datalistblue[0].header['LINDEN'])
+        fdblue = float(datalistblue[0].header['CAMFUD'])
+        flblue = float(datalistblue[0].header['FOCLEN'])
+        zPntblue = float(datalistblue[0].header['ZPOINT'])
+        
+        trim_sec_blue= datalistblue[0].header["CCDSEC"]
+        trim_offset_blue= float( trim_sec_blue[1:len(trim_sec_blue)-1].split(':')[0] )-1
+        biningblue= float( datalistblue[0].header["PARAM18"] ) 
+        nxblue= np.size(datavalblue)#spec_data[0]
+        PixelsBlue= biningblue*(np.arange(0,nxblue,1)+trim_offset_blue)
+        lambdasblue = DispCalc(PixelsBlue, alphablue, thetablue, frblue, fdblue, flblue, zPntblue)
+        
+        #Mask out the Littrow Ghost if 'LTTROW' is in the image header
+        try:
+            print 'Masking littrow ghost.'
+            littrow_ghost = datalistblue[0].header['LITTROW']
+            littrow_mask_low = int(float(littrow_ghost[1:len(littrow_ghost)-1].split(',')[0]))# - float(trim_offset_blue))
+            littrow_mask_high = int(float(littrow_ghost[1:len(littrow_ghost)-1].split(',')[1]))# - float(trim_offset_blue))
+            lambdasblue = np.concatenate((lambdasblue[:littrow_mask_low+1],lambdasblue[littrow_mask_high:]))
+            datavalblue = np.concatenate((datavalblue[:littrow_mask_low+1],datavalblue[littrow_mask_high:]))
+            sigmavalblue = np.concatenate((sigmavalblue[:littrow_mask_low+1],sigmavalblue[littrow_mask_high:]))
+            FWHMpixblue = np.concatenate((FWHMpixblue[:littrow_mask_low+1],FWHMpixblue[littrow_mask_high:]))
+        except:
+            print 'No mask for Littrow ghost'
+            pass
+
+        #Read in the red spectrum
+        if redfile:
+            datalistred = fits.open(zzcetired)
+            datavalred = datalistred[0].data[0,0,:] #data[0,0,:] is optimally extracted, data[2,0,:] is sky
+            sigmavalred = datalistred[0].data[3,0,:] #Sigma spectrum
+            #Read in FWHM of red spectrum from npy binary file. Use changing values. If no file exists, use linearized wavelengths
+            try:
+                FWHMredfilename_struc = zzcetired[0:zzcetired.find('w')] + '*' + zzcetired[zzcetired.find('b'):zzcetired.find('_flux')] + '_poly.npy'
+                FWHMredfilename = glob(FWHMredfilename_struc)
+                FWHMpixred = np.load(FWHMredfilename[0])
+                print 'Found file: ', FWHMredfilename[0]
+                print 'Using ', FWHMredfilename[0], ' for convolution'
+            except:
+                #Read in FWHM of red spectrum from header. Use one value only. If you change which one you use, don't forget to change it below too.
+                FWHMpixred_val = datalistred[0].header['specfwhm'] 
+                FWHMpixred = FWHMpixred_val * np.ones(len(datavalred))
+                print  'Using ', FWHMpixred_val, ' for convolution'
+            '''
+            #Linearized red wavelengths
+            wav0red = datalistred[0].header['crval1']
+            deltawavred = datalistred[0].header['cd1_1']
+            lambdasred = np.ones(len(datavalred))
+            lambdasred[0] = wav0red
+            ivalred = np.arange(1,len(datavalred))
+    
+            for i in ivalred:
+                lambdasred[i] = lambdasred[i-1] + deltawavred
+            '''
+            #Grating equation red wavelengths
+            alphared = float(datalistred[0].header['GRT_TARG'])
+            thetared = float(datalistred[0].header['CAM_TARG'])
+            frred = float(datalistred[0].header['LINDEN'])
+            fdred = float(datalistred[0].header['CAMFUD'])
+            flred = float(datalistred[0].header['FOCLEN'])
+            zPntred = float(datalistred[0].header['ZPOINT'])
+            
+            trim_sec_red= datalistred[0].header["CCDSEC"]
+            trim_offset_red= float( trim_sec_red[1:len(trim_sec_red)-1].split(':')[0] )-1
+            biningred= float( datalistred[0].header["PARAM18"] ) 
+            nxred= np.size(datavalred)#spec_data[0]
+            PixelsRed= biningred*(np.arange(0,nxred,1)+trim_offset_red)
+            lambdasred = DispCalc(PixelsRed, alphared, thetared, frred, fdred, flred, zPntred)
+
+        #Concatenate both into two arrays
+        if redfile:
+            lambdas = np.concatenate((lambdasblue,lambdasred))
+            dataval = np.concatenate((datavalblue,datavalred))
+            sigmaval = np.concatenate((sigmavalblue,sigmavalred))#2.e-17 * np.ones(len(dataval)) small/big44./87.*
+            FWHM = (lambdasblue[-1] - lambdasblue[0])/nxblue * np.concatenate((FWHMpixblue,FWHMpixred)) #from grating equation
+            #FWHM = deltawavblue * np.concatenate((FWHMpixblue,FWHMpixred)) #FWHM in Angstroms linearized
+        else:
+            lambdas = np.array(lambdasblue)
+            dataval = np.array(datavalblue)
+            sigmaval = np.array(sigmavalblue)
+            FWHM = FWHMpixblue * (lambdasblue[-1] - lambdasblue[0])/nxblue #from grating equation
+            #FWHM = FWHMpixblue * deltawavblue #FWHM in Angstroms linearized
+    
     else:
-        lambdas = np.array(lambdasblue)
-        dataval = np.array(datavalblue)
-        sigmaval = np.array(sigmavalblue)
-        FWHM = FWHMpixblue * (lambdasblue[-1] - lambdasblue[0])/nxblue #from grating equation
-        #FWHM = FWHMpixblue * deltawavblue #FWHM in Angstroms linearized
+        print 'Reading in text file'
+        lambdas, dataval, sigmaval = np.genfromtxt(zzcetiblue,unpack=True)
+        FWHM = res * np.ones(len(lambdas))
 
+        #Header values to save
+        RA = 'UNKNOWN'
+        DEC = 'UNKNOWN'
+        SNR = 0.
+        airmass = 0.
+        nexp = 0.
+        exptime = 0.
+
+        #ID for naming of files
+        idname = zzcetiblue[:-4]
 
     #plot the spectrum
     #plt.clf()
@@ -858,7 +875,7 @@ def fit_now(zzcetiblue,zzcetired,redfile,fitguess='data',higherlines='g10'):
         '''
         now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M")
         endpoint = '.ms.'
-        savefitspec = 'fit_' + zzcetiblue[5:zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_H11.pdf'
+        savefitspec = 'fit_' + idname + '_' + now[5:10] + '_H11.pdf'
         fitpdf = PdfPages(savefitspec)
         plt.clf()
         plt.plot(hlambdas,hval,'b')
@@ -1062,7 +1079,7 @@ def fit_now(zzcetiblue,zzcetired,redfile,fitguess='data',higherlines='g10'):
         #Save the pseudogaussian fits to the spectrum as a pdf
         now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M")
         endpoint = '.ms.'
-        savefitspec = 'fit_' + zzcetiblue[5:zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_H10.pdf'
+        savefitspec = 'fit_' + idname + '_' + now[5:10] + '_H10.pdf'
         fitpdf = PdfPages(savefitspec)
         plt.clf()
         plt.plot(hlambdas,hval,'b')
@@ -1319,7 +1336,7 @@ def fit_now(zzcetiblue,zzcetired,redfile,fitguess='data',higherlines='g10'):
     home_directory = os.getcwd()
     if zzcetiblue[0] == '.':
         os.chdir(zzcetiblue[0:zzcetiblue.find('w')])
-    saveoffsets = 'offsets_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_' + marker + '.pdf'
+    saveoffsets = 'offsets_' + idname + '_' + now[5:10] + '_' + marker + '.pdf'
     global offsetpdf
     offsetpdf = PdfPages(saveoffsets)
     if redfile:
@@ -1864,13 +1881,13 @@ def fit_now(zzcetiblue,zzcetired,redfile,fitguess='data',higherlines='g10'):
     now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M")
     marker = str(np.round(FWHM[0],decimals=2))
     endpoint = '.ms.'
-    savespecname = 'norm_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_' + marker + '.txt'
+    savespecname = 'norm_' + idname + '_' + now[5:10] + '_' + marker + '.txt'
     header = 'Normalized spectrum. Columns: wavelength, normalized flux, sigma' 
     np.savetxt(savespecname,np.transpose([alllambda,allnline,allsigma]),header=header)
 
     #Save the guesses and best-fitting parameters for the pseudogaussians
     #aest,best,bigest for guesses and aparams.params, bparams.params, hparams.params
-    savefitparams = 'params_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_' + marker + '.txt'
+    savefitparams = 'params_' + idname + '_' + now[5:10] + '_' + marker + '.txt'
     saveparams = np.zeros([len(bigest),6])
     saveparams[0:len(best),1] = best
     saveparams[0:len(bigest),2] = bigest
@@ -1884,7 +1901,7 @@ def fit_now(zzcetiblue,zzcetired,redfile,fitguess='data',higherlines='g10'):
     np.savetxt(savefitparams,saveparams,header=header)
 
     #Save the pseudogaussian fits to the spectrum as a pdf
-    savefitspec = 'fit_' + zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + '_' + now[5:10] + '_' + marker + '.pdf'
+    savefitspec = 'fit_' + idname  + '_' + now[5:10] + '_' + marker + '.pdf'
     fitpdf = PdfPages(savefitspec)
     if redfile:
         plt.clf()
@@ -1901,7 +1918,7 @@ def fit_now(zzcetiblue,zzcetired,redfile,fitguess='data',higherlines='g10'):
     axes = plt.gca()
     ymin, ymax = axes.get_ylim()
     plt.plot(blambdas,betaval-betafit + (betafit.min()+ymin)/2.5,'k')
-    plt.title(zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + ', R. chi^2: ' + str(np.round(bparams.fnorm/bparams.dof,decimals=4)))
+    plt.title(idname + ', R. chi^2: ' + str(np.round(bparams.fnorm/bparams.dof,decimals=4)))
     fitpdf.savefig()
     plt.clf()
     plt.plot(hlambdas,hval,'b')
@@ -1909,7 +1926,7 @@ def fit_now(zzcetiblue,zzcetired,redfile,fitguess='data',higherlines='g10'):
     axes = plt.gca()
     ymin, ymax = axes.get_ylim()
     plt.plot(hlambdas,hval-hfit + (hfit.min()+ymin)/2.5,'k')
-    plt.title(zzcetiblue[zzcetiblue.find('w'):zzcetiblue.find(endpoint)] + ', R. chi^2: ' + str(np.round(hparams.fnorm/hparams.dof,decimals=4)))
+    plt.title(idname + ', R. chi^2: ' + str(np.round(hparams.fnorm/hparams.dof,decimals=4)))
     fitpdf.savefig()
     try:
         stitchlocation = datalistblue[0].header['STITCHLO']
@@ -1955,12 +1972,12 @@ def fit_now(zzcetiblue,zzcetired,redfile,fitguess='data',higherlines='g10'):
         modelwavelengths = 'air'
     elif os.getcwd()[0:4] == '/afs': #Check if we are on Infierno
         #path = '/srv/two/jtfuchs/Interpolated_Models/Koester_ML2alpha06/bottom11500_750'
-        #path = '/srv/two/jtfuchs/Interpolated_Models/Koester_ML2alpha08/bottom10000_700'
-        #modelwavelengths = 'vacuum'
-        path = '/srv/two/jtfuchs/Interpolated_Models/Bergeron_new/bottom10000_700'
-        modelwavelengths = 'air'
+        path = '/srv/two/jtfuchs/Interpolated_Models/Koester_ML2alpha08/bottom10000_700'
+        modelwavelengths = 'vacuum'
+        #path = '/srv/two/jtfuchs/Interpolated_Models/Bergeron_new/bottom10000_700'
+        #modelwavelengths = 'air'
 
-    ncflux,bestT,bestg = intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path,marker,redfile,RA,DEC,SNR,airmass,nexp,exptime,modelwavelengths)
+    ncflux,bestT,bestg = intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzcetiblue,zzcetired,FWHM,indices,path,marker,redfile,RA,DEC,SNR,airmass,nexp,exptime,modelwavelengths,idname)
 
 
 
@@ -1970,6 +1987,7 @@ if __name__ == '__main__':
     parser.add_argument('specfiles',type=str,nargs='+',help='Blue/Red fits files')
     parser.add_argument('--fitguess',type=str,default='data',help='Either data or model',choices=['data','model'])
     parser.add_argument('--higherlines',type=str,default='g10',help='Either g10 or g11',choices=['g10','g11'])
+    parser.add_argument('--res',type=float,help='Resolution in Angstroms')
     args = parser.parse_args()
     if len(args.specfiles) == 1:
         zzcetiblue = args.specfiles[0]
@@ -1995,4 +2013,4 @@ if __name__ == '__main__':
     else:
         print '\n Incorrect number of arguments. \n'
     '''
-    fit_now(zzcetiblue,zzcetired,redfile,args.fitguess,args.higherlines)
+    fit_now(zzcetiblue,zzcetired,redfile,args.fitguess,args.higherlines,args.res)
