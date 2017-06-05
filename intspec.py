@@ -18,6 +18,7 @@ import os
 import sys
 import datetime
 import mpfit
+from astropy.convolution import convolve_fft
 #from astropy.table import Table
 #import pyfits as pf # Infierno doesn't support astropy for some reason so using pyfits
 
@@ -276,7 +277,7 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         length = len(intflux) - 360.
         cflux = np.zeros(length)
         clambda = intlambda[180:len(intlambda)-180]
-        
+        '''
         x  = 0
         while x < length:
             gauss = (1./(sig[x] * np.sqrt(2. * np.pi))) * np.exp(-(gx-18.)**2./(2.*sig[x]**2.))
@@ -284,7 +285,7 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
             gf = np.divide(tempintflux*gauss,10.) #Convolved gauss with intflux. Divide by 10 because below.
             cflux[x] = np.sum(gf,dtype='d')
             x += 1
-        
+        '''
         #To get an array with 361 columns and N_elements(intflux) rows,
         #we'd multiply gauss * intflux (column by row) and each row would contain the
         #Gaussian multiplied by the value of the flux, then, starting at the top right
@@ -325,6 +326,12 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         #plt.plot(clambda,cflux2,'r^',label='k=2')
         #plt.legend()
         #plt.show()
+        
+        #From Stephen
+        gauss = (1./(sig[0] * np.sqrt(2. * np.pi))) * np.exp(-(gx-18.)**2./(2.*sig[0]**2.))
+        cflux = convolve_fft(intflux,gauss,normalize_kernel=True)
+        cflux = cflux[180:int(length)+180]
+        
 
         #Now we need to spline interpolate the convolved model and read out points
         #at the corresponding wavelength of the actual spectrum

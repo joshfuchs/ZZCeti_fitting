@@ -1972,10 +1972,10 @@ def fit_now(zzcetiblue,zzcetired,redfile,fitguess='data',higherlines='g10',res=N
     filenames = 'interpolated_names.txt'
     #filenames = 'short_list.txt'
     if os.getcwd()[0:4] == '/pro': #Check if we are on Hatteras
-        #path = '/projects/stars/uncphysics/josh/Koester_ML2alpha08'
-        #modelwavelengths = 'vacuum'
-        path = '/projects/stars/uncphysics/josh/bergeron_new'
-        modelwavelengths = 'air'
+        path = '/projects/stars/uncphysics/josh/Koester_ML2alpha08'
+        modelwavelengths = 'vacuum'
+        #path = '/projects/stars/uncphysics/josh/bergeron_new'
+        #modelwavelengths = 'air'
     elif os.getcwd()[0:4] == '/afs': #Check if we are on Infierno
         #path = '/srv/two/jtfuchs/Interpolated_Models/Koester_ML2alpha06/bottom11500_750'
         path = '/srv/two/jtfuchs/Interpolated_Models/Koester_ML2alpha08/bottom10000_700'
