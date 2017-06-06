@@ -371,26 +371,26 @@ def fit_now(zzcetiblue,zzcetired,redfile,fitguess='data',higherlines='g10',res=N
     alphanormwavelengthlow = 6413. #6413
     alphanormwavelengthhigh = 6713. #6713
     
-    betafitwavelengthlow = 4680. #4680
-    betafitwavelengthhigh = 5040. #5040
-    betanormwavelengthlow = 4721. #4721
-    betanormwavelengthhigh = 5001. #5001
+    betafitwavelengthlow = 4670. #4680
+    betafitwavelengthhigh = 5050. #5040
+    betanormwavelengthlow = 4682. #4721
+    betanormwavelengthhigh = 5042. #5001
     
     gammafitwavelengthlow = 4200. #4200
     gammafitwavelengthhigh = 4510. #4510
-    gammanormwavelengthlow = 4220. #4220
-    gammanormwavelengthhigh = 4460. #4460
+    gammanormwavelengthlow = 4221. #4220
+    gammanormwavelengthhigh = 4491. #4460
     
     highwavelengthlow = 3782. #3782 for H10 and 3755 for H11
     highwavelenghthigh = 4191. #4191 
-    deltawavelengthlow = 4031. #4031
-    deltawavelengthhigh = 4191. #4191
-    epsilonwavelengthlow = 3925. #3925
-    epsilonwavelengthhigh = 4030. # 4030
-    heightwavelengthlow = 3859. #3859
+    deltawavelengthlow = 4037. #4031
+    deltawavelengthhigh = 4202. #4191
+    epsilonwavelengthlow = 3931. #3925
+    epsilonwavelengthhigh = 4031. # 4030
+    heightwavelengthlow = 3860. #3859
     heightwavelengthhigh = 3925. # 3925
-    hninewavelengthlow = 3815. #3815
-    hninewavelengthhigh = 3855. #3855
+    hninewavelengthlow = 3821. #3815
+    hninewavelengthhigh = 3851. #3855
     htenwavelengthlow = 3785. #3785
     htenwavelengthhigh = 3815. #3815
     helevenwavelengthlow = 3757.
@@ -1972,10 +1972,10 @@ def fit_now(zzcetiblue,zzcetired,redfile,fitguess='data',higherlines='g10',res=N
     filenames = 'interpolated_names.txt'
     #filenames = 'short_list.txt'
     if os.getcwd()[0:4] == '/pro': #Check if we are on Hatteras
-        path = '/projects/stars/uncphysics/josh/Koester_ML2alpha08'
-        modelwavelengths = 'vacuum'
-        #path = '/projects/stars/uncphysics/josh/bergeron_new'
-        #modelwavelengths = 'air'
+        #path = '/projects/stars/uncphysics/josh/Koester_ML2alpha08'
+        #modelwavelengths = 'vacuum'
+        path = '/projects/stars/uncphysics/josh/bergeron_new'
+        modelwavelengths = 'air'
     elif os.getcwd()[0:4] == '/afs': #Check if we are on Infierno
         #path = '/srv/two/jtfuchs/Interpolated_Models/Koester_ML2alpha06/bottom11500_750'
         path = '/srv/two/jtfuchs/Interpolated_Models/Koester_ML2alpha08/bottom10000_700'
