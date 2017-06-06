@@ -372,7 +372,7 @@ def fit_now(zzcetiblue,zzcetired,redfile,fitguess='data',higherlines='g10',res=N
     alphanormwavelengthhigh = 6713. #6713
     
     betafitwavelengthlow = 4670. #4680
-    betafitwavelengthhigh = 5050. #5040
+    betafitwavelengthhigh = 5055. #5040
     betanormwavelengthlow = 4682. #4721
     betanormwavelengthhigh = 5042. #5001
     
