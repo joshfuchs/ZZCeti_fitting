@@ -1027,7 +1027,7 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
     f.close()
     
     #Now save the best convolved model and delta chi squared surface
-    file_header = str(lowestg) + ',' + str(deltag) + ',' + str(highestg) + ',' + str(lowestt) + ',' + str(deltat) + ',' + str(highestt)
+    file_header = str(lowestg) + ',' + str(deltag) + ',' + str(highestg) + ',' + str(lowestt) + ',' + str(deltat) + ',' + str(highestt) + ',' + str(len(alllambda))
     endpoint = '.ms.' #For shorter names, use '_930'
     newmodel = 'model_' + idname + '_' + now[5:10] + '_' + marker + '.txt' 
     np.savetxt(newmodel,np.transpose([alllambda,bestmodel]))
