@@ -454,6 +454,11 @@ def fit_now(zzcetiblue,zzcetired,redfile,fitguess='data',higherlines='g10',res=N
         nxblue= np.size(datavalblue)#spec_data[0]
         PixelsBlue= biningblue*(np.arange(0,nxblue,1)+trim_offset_blue)
         lambdasblue = DispCalc(PixelsBlue, alphablue, thetablue, frblue, fdblue, flblue, zPntblue)
+
+        #Offset in v/c
+        print 'Offsetting in v/c.'
+        lambdasblue, stdvoverc = shiftinvoverc(lambdasblue,datavalblue,sigmavalblue,plotall=True)
+        print 'Done offsetting in v/c.'
         
         #Mask out the Littrow Ghost if 'LTTROW' is in the image header
         try:
@@ -555,15 +560,9 @@ def fit_now(zzcetiblue,zzcetired,redfile,fitguess='data',higherlines='g10',res=N
 
     #Save spectrum
     #np.savetxt('VPHAS1813-2138_spectrum.txt',np.transpose([lambdas,dataval,sigmaval]))
-    
-    #Offset in v/c
-    print 'Offsetting in v/c.'
-    lambdas, stdvoverc = shiftinvoverc(lambdas,dataval,sigmaval,plotall=True)
-    print 'Done offsetting in v/c.'
 
     #First define the fitting and normalization wavelengths,
     # Then sets pixel range using those points
-
 
     #Normal wavelengths
     alphafitwavelengthlow = 6380.#6380
@@ -1239,22 +1238,36 @@ def fit_now(zzcetiblue,zzcetired,redfile,fitguess='data',higherlines='g10',res=N
         #stdvoverc
         siglimit = 3.
         print stdvoverc
-        paraminfo = [{'limits':[0,0],'limited':[0,0]} for i in range(28)]
-        paraminfo[5]['limited'] = [1,1]
-        paraminfo[5]['limits'] = [4341.6550-siglimit*stdvoverc*4341.6550,4341.6550+siglimit*stdvoverc*4341.6550]
-        paraminfo[9]['limited'] = [1,1]
-        paraminfo[9]['limits'] = [4102.9071-siglimit*stdvoverc*4102.9071,4102.9071+siglimit*stdvoverc*4102.9071]
-        paraminfo[13]['limited'] = [1,1]
-        paraminfo[13]['limits'] = [3971.1751-siglimit*stdvoverc*3971.1751,3971.1751+siglimit*stdvoverc*3971.1751]
-        paraminfo[17]['limited'] = [1,1]
-        paraminfo[17]['limits'] = [3890.1461-siglimit*stdvoverc*3890.1461,3890.1461+siglimit*stdvoverc*3890.1461]
-        paraminfo[21]['limited'] = [1,1]
-        paraminfo[21]['limits'] = [3836.4726-siglimit*stdvoverc*3836.4726,3836.4726+siglimit*stdvoverc*3836.4726]
-        paraminfo[25]['limited'] = [1,1]
-        paraminfo[25]['limits'] = [3798.9799-siglimit*stdvoverc*3798.9799,3798.9799+siglimit*stdvoverc*3798.9799]
-        print bigest[5], bigest[9], bigest[13], bigest[17], bigest[21], bigest[25]
-        print paraminfo[5], paraminfo[9], paraminfo[13], paraminfo[17], paraminfo[21], paraminfo[25]
+        paraminfo = [{'limits':[0,0],'limited':[0,0],'fixed':0} for i in range(28)]
+        #paraminfo[5]['limited'] = [1,1]
+        #paraminfo[5]['limits'] = [4341.6550-siglimit*stdvoverc*4341.6550,4341.6550+siglimit*stdvoverc*4341.6550]
+        #paraminfo[9]['limited'] = [1,1]
+        #paraminfo[9]['limits'] = [4102.9071-siglimit*stdvoverc*4102.9071,4102.9071+siglimit*stdvoverc*4102.9071]
+        #paraminfo[13]['limited'] = [1,1]
+        #paraminfo[13]['limits'] = [3971.1751-siglimit*stdvoverc*3971.1751,3971.1751+siglimit*stdvoverc*3971.1751]
+        #paraminfo[17]['limited'] = [1,1]
+        #paraminfo[17]['limits'] = [3890.1461-siglimit*stdvoverc*3890.1461,3890.1461+siglimit*stdvoverc*3890.1461]
+        #paraminfo[21]['limited'] = [1,1]
+        #paraminfo[21]['limits'] = [3836.4726-siglimit*stdvoverc*3836.4726,3836.4726+siglimit*stdvoverc*3836.4726]
+        #paraminfo[25]['limited'] = [1,1]
+        #paraminfo[25]['limits'] = [3798.9799-siglimit*stdvoverc*3798.9799,3798.9799+siglimit*stdvoverc*3798.9799]
+        paraminfo[21]['fixed'] = 1. #H9
+        paraminfo[25]['fixed'] = 1. #H10
+        #print bigest[5], bigest[9], bigest[13], bigest[17], bigest[21], bigest[25]
+        #print paraminfo[5], paraminfo[9], paraminfo[13], paraminfo[17], paraminfo[21], paraminfo[25]
         
+        print bigest[21], bigest[25]
+        print paraminfo[21], paraminfo[25]
+
+        #plt.clf()
+        #plt.plot(hlambdas,hval,'k',linewidth=2.0)
+        #plt.plot(hlambdas,bigpseudogaussgamma(hlambdas,bigest),'g')
+        #plt.axvline(bigest[21])
+        #plt.axvline(bigest[25])
+        #plt.show()
+        #exit()
+        
+
         print 'Now fitting H-gamma through H10.'
         bigfa = {'x':hlambdas, 'y':hval, 'err':hsig}
         ##hparams = mpfit.mpfit(fitbigpseudogaussgamma,bigest,functkw=bigfa,maxiter=300,ftol=1e-12,xtol=1e-8,quiet=True)#-10,-8
@@ -1267,12 +1280,15 @@ def fit_now(zzcetiblue,zzcetired,redfile,fitguess='data',higherlines='g10',res=N
         hfit = bigpseudogaussgamma(hlambdas,hparams.params)
 
         print 'Differences in fitted line location from limits:'
-        print 'Gamma: ', (hparams.params[5]-paraminfo[5]['limits'][0]), (hparams.params[5]-paraminfo[5]['limits'][1])
-        print 'Delta: ', (hparams.params[9]-paraminfo[9]['limits'][0]), (hparams.params[9]-paraminfo[9]['limits'][1])
-        print 'Epsilon: ', (hparams.params[13]-paraminfo[13]['limits'][0]), (hparams.params[13]-paraminfo[13]['limits'][1])
-        print 'H8: ', (hparams.params[17]-paraminfo[17]['limits'][0]), (hparams.params[17]-paraminfo[17]['limits'][1])
-        print 'H9: ', (hparams.params[21]-paraminfo[21]['limits'][0]), (hparams.params[21]-paraminfo[21]['limits'][1])
-        print 'H10: ', (hparams.params[25]-paraminfo[25]['limits'][0]), (hparams.params[25]-paraminfo[25]['limits'][1])
+        #print 'Gamma: ', (hparams.params[5]-paraminfo[5]['limits'][0]), (hparams.params[5]-paraminfo[5]['limits'][1])
+        #print 'Delta: ', (hparams.params[9]-paraminfo[9]['limits'][0]), (hparams.params[9]-paraminfo[9]['limits'][1])
+        #print 'Epsilon: ', (hparams.params[13]-paraminfo[13]['limits'][0]), (hparams.params[13]-paraminfo[13]['limits'][1])
+        #print 'H8: ', (hparams.params[17]-paraminfo[17]['limits'][0]), (hparams.params[17]-paraminfo[17]['limits'][1])
+        #print 'H9: ', (hparams.params[21]-paraminfo[21]['limits'][0]), (hparams.params[21]-paraminfo[21]['limits'][1])
+        #print 'H10: ', (hparams.params[25]-paraminfo[25]['limits'][0]), (hparams.params[25]-paraminfo[25]['limits'][1])
+        print 'H9: ', (hparams.params[21] - bigest[21])
+        print 'H10: ', (hparams.params[25] - bigest[25])
+
 
         #Get line centers
         gcenter = hparams.params[5]
@@ -1302,6 +1318,8 @@ def fit_now(zzcetiblue,zzcetired,redfile,fitguess='data',higherlines='g10',res=N
         #plt.plot(hlambdas,hval,'k',linewidth=2.0)
         #plt.plot(biglambdas,bigpp(biglambdas),'r')
         #plt.plot(hlambdas,bigguess,'g')
+        #plt.axvline(bigest[21])
+        #plt.axvline(bigest[25])
         #plt.plot(hlambdas,bigpp(hlambdas),'g')
         #plt.plot(hlambdas,hfit,'r',linewidth=2.0)
         #plt.plot(hlambdas,hparams.params[0] + hparams.params[1]*hlambdas + hparams.params[2]*hlambdas**2. + hparams.params[3]*hlambdas**3.,'r')
