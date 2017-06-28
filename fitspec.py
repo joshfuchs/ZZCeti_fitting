@@ -199,9 +199,13 @@ def shiftinvoverc(lambdas,dataval,sigmaval,plotall=True):
     #First, fit H beta
     betafitwavelengthlow = 4680. #4680
     betafitwavelengthhigh = 5040. #5040
+    
+    #Ensure arrays
+    lambdas = np.asarray(lambdas)
+    dataval = np.asarray(dataval)
+    sigmaval = np.asarray(sigmaval)
     bfitlow = np.min(np.where(lambdas > betafitwavelengthlow))
     bfithi = np.min(np.where(lambdas > betafitwavelengthhigh))
-
     blambdas = lambdas[bfitlow:bfithi+1]
     bsigmas = sigmaval[bfitlow:bfithi+1]
     betaval = dataval[bfitlow:bfithi+1]
