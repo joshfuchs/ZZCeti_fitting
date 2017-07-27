@@ -343,6 +343,8 @@ def intspecs(alllambda,allnline,allsigma,lambdaindex,case,filenames,lambdas,zzce
         #plt.plot(lambdarange,cflux2,'b+')
         #plt.show()
         #print 'Done with the interpolation of the convolved flux'
+        #intmodelname = 'da' + str(teff) + '_' + str(logg) + idname[5:] + '_' + str(np.round(FWHM[0],decimals=2)) + '.txt'
+        #np.savetxt(intmodelname,np.transpose([lambdarange,cflux2]))
         #np.savetxt('da13750_825_interp.txt',np.transpose([lambdarange,cflux2]))
         #sys.exit()
         #Fit a line to the endpoints and normalize
